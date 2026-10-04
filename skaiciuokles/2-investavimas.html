@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investavimo Skaičiuoklė · Apie finansus</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Apie finansus brand paletė */
+            --brand-green: #45935B;
+            --brand-green-dark: #2F6D41;
+            --brand-green-light: #6BB280;
+            --ink-dark: #1A2620;
+            --gray-100: #F5F5F5;
+            --gray-400: #A0A0A0;
+            --gray-600: #666666;
+
+            /* Funkciniai pavadinimai (light theme) */
+            --bg-color: #FFFFFF;
+            --bg-gradient: none;
+            --card-bg: #FFFFFF;
+            --card-border: #E5E7EB;
+            --text-main: var(--ink-dark);
+            --text-muted: var(--gray-600);
+            --text-accent: var(--brand-green);
+            --color-invested: #45935B;
+            --color-accumulated: #2F6D41;
+            --color-danger: #C2410C;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Figtree', sans-serif;
+            background-color: var(--bg-color);
+            background-image: var(--bg-gradient);
+            color: var(--text-main);
+            margin: 0;
+            padding: 2rem 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 1px 2px rgba(26, 38, 32, 0.04);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .header span { color: var(--brand-green); }
+
+        .inputs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .input-group label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            letter-spacing: 0.02em;
+        }
+
+        .input-group input {
+            background: var(--gray-100);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .input-group input::placeholder {
+            color: #A8A8A8;
+        }
+
+        .input-group input:focus {
+            border-color: var(--brand-green);
+            background: #FFFFFF;
+            box-shadow: 0 0 0 3px rgba(69, 147, 91, 0.15);
+        }
+
+        /* Pirminis mygtukas — brandbook stilius */
+        .btn-calculate {
+            width: 100%;
+            padding: 1.1rem;
+            border-radius: 8px;
+            border: none;
+            background: var(--brand-green);
+            color: #FFFFFF;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+            font-family: 'Figtree', sans-serif;
+            font-size: 0.95rem;
+            margin-top: 0.5rem;
+        }
+
+        .btn-calculate:hover {
+            background: var(--brand-green-dark);
+            box-shadow: 0 8px 20px -6px rgba(69, 147, 91, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .btn-calculate:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 10px -4px rgba(69, 147, 91, 0.4);
+        }
+
+        /* Rezultatų konteineris */
+        #results-area {
+            display: none;
+            flex-direction: column;
+            gap: 2rem;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hero-values {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+            min-height: 45px;
+        }
+
+        .hero-box {
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            background: var(--gray-100);
+            border-radius: 8px;
+            border: 1px solid var(--card-border);
+            min-width: 180px;
+        }
+
+        .hero-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 12px;
+            box-shadow: 0 0 10px currentColor;
+        }
+
+        .hero-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .hero-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .hero-val {
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .chart-wrapper {
+            height: 400px;
+            width: 100%;
+            position: relative;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid var(--card-border);
+            max-height: 500px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            background: #FFFFFF;
+        }
+
+        th {
+            background: var(--gray-100);
+            color: var(--text-muted);
+            text-align: left;
+            padding: 1rem;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+            border-bottom: 1px solid var(--card-border);
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        td {
+            padding: 0.8rem 1rem;
+            border-bottom: 1px solid var(--card-border);
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-main);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(26, 38, 32, 0.03);
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .stat-box {
+            background: var(--gray-100);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid var(--card-border);
+        }
+
+        .stat-val {
+            display: block;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--brand-green-dark);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 500;
+        }
+
+        .fee-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .fee-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .fee-item:last-child {
+            border-bottom: none;
+        }
+
+        .fee-name {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .fee-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            color: var(--color-danger);
+        }
+
+        .no-fee-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .no-fee-box {
+            padding: 1.2rem;
+            border-radius: 8px;
+            background: var(--gray-100);
+            border: 1px solid var(--card-border);
+        }
+
+        .stat-sub {
+            display: block;
+            margin-top: 0.45rem;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        @media (max-width: 768px) {
+            .inputs-grid { grid-template-columns: 1fr 1fr; }
+            .chart-wrapper { height: 300px; }
+            .hero-box { min-width: 140px; padding: 6px 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Kontrolės skydelis -->
+    <div class="card">
+        <div class="header">
+            <h1>Investavimo <span>Skaičiuoklė</span></h1>
+        </div>
+
+        <div class="inputs-grid">
+            <div class="input-group">
+                <label>Vienkartinė įmoka (€)</label>
+                <input type="number" id="init-deposit" value="0">
+            </div>
+            <div class="input-group">
+                <label>Mėnesinė įmoka (€)</label>
+                <input type="number" id="monthly-deposit" value="150">
+            </div>
+            <div class="input-group">
+                <label>Metinis pelningumas (%)</label>
+                <input type="number" id="annual-return" value="12" step="0.1">
+            </div>
+            <div class="input-group">
+                <label>Periodas (metais)</label>
+                <input type="number" id="years" value="40">
+            </div>
+            <div class="input-group">
+                <label>Papildoma įmoka (metais)</label>
+                <input type="number" id="extra-year" placeholder="Pvz. 5">
+            </div>
+            <div class="input-group">
+                <label>Papildoma suma (€)</label>
+                <input type="number" id="extra-amount" placeholder="Pvz. 1000">
+            </div>
+        </div>
+
+        <button class="btn-calculate" id="btn-calculate">Skaičiuoti</button>
+    </div>
+
+    <!-- Rezultatų skiltis (paslėpta iki skaičiavimo) -->
+    <div id="results-area">
+
+        <div class="card">
+            <div class="summary-stats">
+                <div class="stat-box">
+                    <span class="stat-label">Iš viso investuota</span>
+                    <span class="stat-val" style="color: var(--text-main); font-size: 1.4rem;" id="total-invested-display">0 €</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Sukaupta suma</span>
+                    <span class="stat-val" id="total-accumulated-display">0 €</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Grynasis pelnas</span>
+                    <span class="stat-val" id="total-profit-display">0 €</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div id="sim-hero-values" class="hero-values"></div>
+            <div class="chart-wrapper">
+                <canvas id="investmentChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="header" style="text-align: left; margin-bottom: 1.5rem;">
+                <h1>REZULTATŲ <span>SUVESTINĖ</span></h1>
+            </div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Metai</th>
+                            <th>5-erių m. įmoka</th>
+                            <th>Viso investuota</th>
+                            <th>Investicinis pelnas</th>
+                            <th>Sukaupta</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-table"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="header" style="text-align: left; margin-bottom: 1.5rem;">
+                <h1>JEIGU NEBŪTŲ <span>JOKIŲ MOKESČIŲ</span></h1>
+            </div>
+            <div class="no-fee-summary">
+                <div class="no-fee-box">
+                    <span class="stat-label">Viso būtų investuota</span>
+                    <span class="stat-val" style="color: var(--text-main)" id="no-fee-invested">0,00 €</span>
+                </div>
+                <div class="no-fee-box">
+                    <span class="stat-label">Būtų uždirbta</span>
+                    <span class="stat-val" id="no-fee-profit">0,00 €</span>
+                </div>
+                <div class="no-fee-box">
+                    <span class="stat-label">Bendrai būtų sukaupta</span>
+                    <span class="stat-val" style="font-size: 1.4rem" id="no-fee-accumulated">0,00 €</span>
+                    <span class="stat-sub" id="no-fee-accumulated-gpm">Atskaičius 15% GPM nuo pelno: 0,00 €</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="header" style="text-align: left; margin-bottom: 1.5rem;">
+                <h1>SUMOKĖTI <span style="color: var(--color-danger)">MOKESČIAI PER <span id="fee-period-display">40</span> METŲ</span></h1>
+            </div>
+            <div class="fee-list">
+                <div class="fee-item">
+                    <span class="fee-name">Administraciniai mokesčiai</span>
+                    <span class="fee-val" id="fee-admin">0,00 €</span>
+                </div>
+                <div class="fee-item">
+                    <span class="fee-name">Įmokos surinkimo mokesčiai</span>
+                    <span class="fee-val" id="fee-collection">0,00 €</span>
+                </div>
+                <div class="fee-item">
+                    <span class="fee-name">Turto valdymo mokesčiai</span>
+                    <span class="fee-val" id="fee-mgmt">0,00 €</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    'use strict';
+
+    // ─── DOM cache (vienkartinis paėmimas) ──────────────────────────────
+    const $ = (id) => document.getElementById(id);
+    const els = {
+        initDeposit: $('init-deposit'),
+        monthlyDeposit: $('monthly-deposit'),
+        annualReturn: $('annual-return'),
+        years: $('years'),
+        extraYear: $('extra-year'),
+        extraAmount: $('extra-amount'),
+        feePeriodDisplay: $('fee-period-display'),
+        totalInvested: $('total-invested-display'),
+        totalAccumulated: $('total-accumulated-display'),
+        totalProfit: $('total-profit-display'),
+        feeAdmin: $('fee-admin'),
+        feeCollection: $('fee-collection'),
+        feeMgmt: $('fee-mgmt'),
+        noFeeInvested: $('no-fee-invested'),
+        noFeeProfit: $('no-fee-profit'),
+        noFeeAccumulated: $('no-fee-accumulated'),
+        noFeeAccumulatedGpm: $('no-fee-accumulated-gpm'),
+        resultsTable: $('results-table'),
+        resultsArea: $('results-area'),
+        heroContainer: $('sim-hero-values'),
+        chartCanvas: $('investmentChart'),
+        btnCalculate: $('btn-calculate'),
+    };
+
+    // ─── Formatavimo helperis su Intl cache ─────────────────────────────
+    const eurFormatter = new Intl.NumberFormat('lt-LT', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
+    const formatEur = (val) => eurFormatter.format(val) + ' €';
+
+    let chartInstance = null;
+
+    // ─── Sliding point plugin (optimizuotas) ────────────────────────────
+    // PASTABA: ankstesnė versija per beforeDraw kvietė requestAnimationFrame
+    // kuris kvietė chart.draw() — tai sukėlė begalinę CPU kilpą. Dabar
+    // animacija varoma vienos rAF kilpos lauke ir tik atnaujina progresą.
+    const slidingPointPlugin = {
+        id: 'slidingPoint',
+        afterDraw: (chart) => {
+            if (chart.config.type !== 'line') return;
+            const ctx = chart.ctx;
+            const currentIndex = chart._slidingProgress ?? 0;
+            const maxIndex = chart.data.labels.length - 1;
+            if (currentIndex > maxIndex) return;
+
+            const lowerIndex = Math.floor(currentIndex);
+            const upperIndex = Math.min(Math.ceil(currentIndex), maxIndex);
+            const fraction = currentIndex - lowerIndex;
+
+            // Hero values atnaujinimas
+            if (els.heroContainer) {
+                const displayYear = (lowerIndex + fraction).toFixed(1);
+                let heroHtml =
+                    `<div class="hero-box" style="min-width: 80px; justify-content: center;">` +
+                    `<span style="font-family: 'JetBrains Mono'; font-weight: 700;">${displayYear} m.</span></div>`;
+
+                for (let i = 0; i < chart.data.datasets.length; i++) {
+                    const dataset = chart.data.datasets[i];
+                    const lowerVal = dataset.data[lowerIndex];
+                    const upperVal = dataset.data[upperIndex];
+                    const interpolatedVal = lowerVal + (upperVal - lowerVal) * fraction;
+                    heroHtml +=
+                        `<div class="hero-box">` +
+                        `<div class="hero-dot" style="color: ${dataset.borderColor}; background: ${dataset.borderColor}"></div>` +
+                        `<div class="hero-info">` +
+                        `<span class="hero-label">${dataset.label}</span>` +
+                        `<span class="hero-val">${formatEur(interpolatedVal)}</span>` +
+                        `</div></div>`;
+                }
+                els.heroContainer.innerHTML = heroHtml;
+            }
+
+            // Slankiojantis taškas ant grafiko
+            for (let i = 0; i < chart.data.datasets.length; i++) {
+                const meta = chart.getDatasetMeta(i);
+                if (meta.hidden) continue;
+                const lowerPoint = meta.data[lowerIndex];
+                const upperPoint = meta.data[upperIndex];
+                if (!lowerPoint || !upperPoint) continue;
+                const x = lowerPoint.x + (upperPoint.x - lowerPoint.x) * fraction;
+                const y = lowerPoint.y + (upperPoint.y - lowerPoint.y) * fraction;
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(x, y, 6, 0, 2 * Math.PI);
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fill();
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = chart.data.datasets[i].borderColor;
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(x, y, 2.5, 0, 2 * Math.PI);
+                ctx.fillStyle = chart.data.datasets[i].borderColor;
+                ctx.fill();
+                ctx.restore();
+            }
+        },
+    };
+    Chart.register(slidingPointPlugin);
+
+    // ─── Viena globali animacijos kilpa (vietoj rekursinės beforeDraw) ──
+    let animationRunning = false;
+    function startAnimationLoop() {
+        if (animationRunning) return;
+        animationRunning = true;
+        const tick = () => {
+            if (chartInstance && chartInstance.data.labels.length > 1) {
+                const maxIndex = chartInstance.data.labels.length - 1;
+                chartInstance._slidingProgress = (chartInstance._slidingProgress ?? 0) + 0.012;
+                if (chartInstance._slidingProgress > maxIndex) chartInstance._slidingProgress = 0;
+                chartInstance.draw();
+            }
+            requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+    }
+
+    // ─── Skaičiavimo funkcija (formulės nepakitusios) ───────────────────
+    function calculate() {
+        const initDeposit = parseFloat(els.initDeposit.value) || 0;
+        const monthlyDeposit = parseFloat(els.monthlyDeposit.value) || 0;
+        const annualReturn = (parseFloat(els.annualReturn.value) || 0) / 100;
+        const yearsInput = parseInt(els.years.value) || 1;
+        const extraYear = parseInt(els.extraYear.value) || -1;
+        const extraAmount = parseFloat(els.extraAmount.value) || 0;
+
+        const months = yearsInput * 12;
+        const monthlyReturn = Math.pow(1 + annualReturn, 1 / 12) - 1;
+
+        els.feePeriodDisplay.innerText = yearsInput;
+
+        const fixedMonthlyMgmtFee = 2.50;
+
+        // Fiksuotas administracinis mokestis (pirmus 36 mėn.): 17 € taikoma,
+        // kai terminas 20 m. ar daugiau; trumpesniam terminui proporcingai
+        // mažesnis (pvz. 10 m. → 8,50 €).
+        const monthlyAdminFee = 17 * Math.min(yearsInput, 20) / 20;
+
+        let balance = 0;
+        let totalInvestedGross = 0;
+        let noFeeBalance = initDeposit;
+        let noFeeTotalInvested = initDeposit;
+
+        let totalAdminFees = 0;
+        let totalCollectionFees = 0;
+        let totalMgmtFees = 0;
+
+        const yearlyData = [];
+        const chartLabels = ['0'];
+        const investedSeries = [initDeposit];
+        const accumulatedSeries = [initDeposit];
+
+        if (initDeposit > 0) {
+            const collFee = initDeposit * 0.02;
+            const entryFee = initDeposit * 0.01;
+            const fees = collFee + entryFee;
+            balance = initDeposit - fees;
+            totalInvestedGross = initDeposit;
+            totalCollectionFees += fees;
+            investedSeries[0] = totalInvestedGross;
+            accumulatedSeries[0] = balance;
+        }
+
+        for (let m = 1; m <= months; m++) {
+            let currentMonthlyGross = monthlyDeposit;
+            let currentMonthlyFees = 0;
+            let noFeeMonthlyGross = monthlyDeposit;
+
+            if (extraYear > 0 && Math.ceil(m / 12) === extraYear && (m % 12 === 1)) {
+                const extraCollFee = extraAmount * 0.02;
+                const extraEntryFee = extraAmount * 0.01;
+                const extraFees = extraCollFee + extraEntryFee;
+                currentMonthlyGross += extraAmount;
+                currentMonthlyFees += extraFees;
+                totalCollectionFees += extraFees;
+                noFeeMonthlyGross += extraAmount;
+            }
+
+            if (m <= 36 && monthlyDeposit > 0) {
+                currentMonthlyFees += monthlyAdminFee;
+                totalAdminFees += monthlyAdminFee;
+            }
+
+            if (monthlyDeposit > 0) {
+                const collFee = monthlyDeposit * 0.02;
+                currentMonthlyFees += collFee;
+                totalCollectionFees += collFee;
+            }
+
+            balance += (currentMonthlyGross - currentMonthlyFees);
+            totalInvestedGross += currentMonthlyGross;
+            balance += (balance * monthlyReturn);
+            balance -= fixedMonthlyMgmtFee;
+            totalMgmtFees += fixedMonthlyMgmtFee;
+
+            noFeeBalance += noFeeMonthlyGross;
+            noFeeTotalInvested += noFeeMonthlyGross;
+            noFeeBalance += (noFeeBalance * monthlyReturn);
+
+            if (m % 12 === 0) {
+                const year = m / 12;
+                yearlyData.push({
+                    year: year,
+                    gross: totalInvestedGross,
+                    balance: balance,
+                    fees: totalAdminFees + totalCollectionFees + totalMgmtFees,
+                });
+                chartLabels.push(String(year));
+                // Be string konvertavimo — naudojam skaičius tiesiogiai
+                investedSeries.push(totalInvestedGross);
+                accumulatedSeries.push(balance);
+            }
+        }
+
+        updateUI(yearlyData, totalInvestedGross, balance, totalAdminFees, totalCollectionFees, totalMgmtFees, noFeeTotalInvested, noFeeBalance);
+        renderChart(chartLabels, investedSeries, accumulatedSeries);
+
+        els.resultsArea.style.display = 'flex';
+    }
+
+    // ─── UI atnaujinimas (kaupiam string vietoj += kilpoje) ─────────────
+    function updateUI(yearlyData, totalInvested, totalAccumulated, adminF, collF, mgmtF, noFeeInvested, noFeeAccumulated) {
+        els.totalInvested.innerText = formatEur(totalInvested);
+        els.totalAccumulated.innerText = formatEur(totalAccumulated);
+        els.totalProfit.innerText = formatEur(totalAccumulated - totalInvested);
+
+        els.feeAdmin.innerText = formatEur(adminF);
+        els.feeCollection.innerText = formatEur(collF);
+        els.feeMgmt.innerText = formatEur(mgmtF);
+
+        els.noFeeInvested.innerText = formatEur(noFeeInvested);
+        const noFeeProfit = noFeeAccumulated - noFeeInvested;
+        els.noFeeProfit.innerText = formatEur(noFeeProfit);
+        els.noFeeAccumulated.innerText = formatEur(noFeeAccumulated);
+        const noFeeAfterGpm = noFeeAccumulated - (noFeeProfit > 0 ? noFeeProfit * 0.15 : 0);
+        els.noFeeAccumulatedGpm.innerText = 'Atskaičius 15% GPM nuo pelno: ' + formatEur(noFeeAfterGpm);
+
+        // Lentelę užpildome vienu innerHTML rašymu
+        const rows = [];
+        let prevGross = 0;
+        for (let i = 0; i < yearlyData.length; i++) {
+            const d = yearlyData[i];
+            if (d.year % 5 === 0) {
+                const blockGross = d.gross - prevGross;
+                const totalInvestmentProfit = d.balance - d.gross;
+                rows.push(
+                    `<tr>` +
+                    `<td>${d.year}</td>` +
+                    `<td>${formatEur(blockGross)}</td>` +
+                    `<td>${formatEur(d.gross)}</td>` +
+                    `<td style="font-weight: 700; color: var(--brand-green-dark)">${formatEur(totalInvestmentProfit)}</td>` +
+                    `<td style="font-weight: 500">${formatEur(d.balance)}</td>` +
+                    `</tr>`
+                );
+                prevGross = d.gross;
+            }
+        }
+        els.resultsTable.innerHTML = rows.join('');
+    }
+
+    // ─── Chart rendering (atnaujinam, o ne perkuriam) ───────────────────
+    function renderChart(labels, invested, accumulated) {
+        // Spalvos pagal brand paletę
+        const investedColor = '#6BB280';   // brand green light
+        const accumulatedColor = '#2F6D41'; // brand green dark
+
+        if (chartInstance) {
+            // Atnaujinam esamą diagramą (pigiau nei destroy + new)
+            chartInstance.data.labels = labels;
+            chartInstance.data.datasets[0].data = invested;
+            chartInstance.data.datasets[1].data = accumulated;
+            chartInstance._slidingProgress = 0;
+            chartInstance.update('none');
+            return;
+        }
+
+        const ctx = els.chartCanvas.getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Investuota',
+                        data: invested,
+                        borderColor: investedColor,
+                        backgroundColor: 'rgba(107, 178, 128, 0.12)',
+                        fill: true,
+                        tension: 0.3,
+                        borderWidth: 3,
+                        pointRadius: 0,
+                        pointHoverRadius: 6,
+                    },
+                    {
+                        label: 'Sukaupta',
+                        data: accumulated,
+                        borderColor: accumulatedColor,
+                        backgroundColor: 'rgba(47, 109, 65, 0.10)',
+                        fill: true,
+                        tension: 0.3,
+                        borderWidth: 3,
+                        pointRadius: 0,
+                        pointHoverRadius: 6,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false, // svarbu — animacija varoma per slidingPointPlugin
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        enabled: true,
+                        backgroundColor: '#FFFFFF',
+                        titleColor: '#666666',
+                        bodyColor: '#1A2620',
+                        bodyFont: { family: 'JetBrains Mono', size: 12 },
+                        borderColor: '#E5E7EB',
+                        borderWidth: 1,
+                        padding: 12,
+                        callbacks: {
+                            title: (items) => items[0].label + ' m.',
+                            label: (ctx) => ' ' + ctx.dataset.label + ': ' + formatEur(ctx.raw),
+                        },
+                    },
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#666666', font: { size: 10, family: 'Figtree' } },
+                        grid: { display: false },
+                    },
+                    y: {
+                        ticks: {
+                            color: '#666666',
+                            font: { size: 10, family: 'Figtree' },
+                            callback: (v) => v >= 1000 ? (v / 1000).toFixed(0) + 'k€' : v + '€',
+                        },
+                        grid: { color: 'rgba(26, 38, 32, 0.06)' },
+                    },
+                },
+            },
+        });
+
+        startAnimationLoop();
+    }
+
+    // ─── Debounce helperis ──────────────────────────────────────────────
+    function debounce(fn, ms) {
+        let timer = null;
+        return function (...args) {
+            if (timer) clearTimeout(timer);
+            timer = setTimeout(() => fn.apply(this, args), ms);
+        };
+    }
+    const debouncedCalculate = debounce(calculate, 250);
+
+    // ─── Event listeneriai ──────────────────────────────────────────────
+    els.btnCalculate.addEventListener('click', calculate);
+
+    // Live atnaujinimas po pirmo skaičiavimo (su debounce, kad neperskaičiuotų
+    // kiekvienam klavišo paspaudimui)
+    document.querySelectorAll('input').forEach((input) => {
+        input.addEventListener('input', () => {
+            if (els.resultsArea.style.display === 'flex') {
+                debouncedCalculate();
+            }
+        });
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Būsto paskolos ir investavimo skaičiuoklė | Apie finansus</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* === Apie finansus brand palette === */
+            --brand-green: #45935B;        /* Primary */
+            --brand-green-dark: #2F6D41;   /* Hover, kontrastiniai akcentai */
+            --brand-green-light: #6BB280;  /* Akcentai ant tamsaus */
+            --ink: #1A2620;                /* Antraštės, tekstas, footer */
+            --surface: #F5F5F5;            /* Kortelių fonas, formos */
+            --surface-alt: #FAFAFA;        /* Sekundarinis paviršius */
+            --neutral: #666666;            /* Antrinis tekstas */
+            --neutral-light: #9CA3AF;      /* Placeholder, pagalbinis */
+            --border: #E5E7EB;             /* Skirtukai */
+            --white: #FFFFFF;
+
+            /* Funkcinės spalvos diagramoms (palaikomos brand identitete) */
+            --chart-annuity: #2F6D41;      /* Tamsi žalia anuitetui */
+            --chart-linear: #C2410C;       /* Šilta accent linijiniam */
+            --chart-investment: #45935B;   /* Brand žalia investicijoms */
+
+            --nav-height: 64px;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+        }
+
+        * { box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Figtree', 'Inter', sans-serif;
+            background-color: var(--white);
+            color: var(--ink);
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* === Header === */
+        .site-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: var(--nav-height);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+        }
+        .brand-mark {
+            font-family: 'Figtree', sans-serif;
+            font-weight: 800;
+            font-size: 0.95rem;
+            color: var(--ink);
+            letter-spacing: -0.01em;
+        }
+        .brand-mark span { color: var(--brand-green); }
+        .brand-mark::before {
+            content: '';
+            display: inline-block;
+            width: 18px;
+            height: 14px;
+            margin-right: 10px;
+            vertical-align: -2px;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 18'><path fill='%2345935B' d='M2 0h20l-3 5H5z'/><path fill='%2345935B' d='M5 7h14l-3 5H8z'/><path fill='%2345935B' d='M8 14h8l-3 4h-2z'/></svg>");
+            background-repeat: no-repeat;
+            background-size: contain;
+        }
+
+        /* === Cards / Panels === */
+        .panel {
+            position: relative;
+            width: 100%;
+            border-radius: var(--radius-lg);
+            background: var(--white);
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 2px rgba(26, 38, 32, 0.04);
+            box-sizing: border-box;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .panel-soft {
+            background: var(--surface);
+            border: 1px solid var(--border);
+        }
+
+        /* === Typography === */
+        h1, h2, h3, h4 {
+            color: var(--ink);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+            margin: 0;
+        }
+        .h1 {
+            font-size: clamp(1.75rem, 4vw, 2.5rem);
+            font-weight: 800;
+        }
+        .h2 {
+            font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+            font-weight: 700;
+        }
+        .h3 {
+            font-size: 1.125rem;
+            font-weight: 700;
+        }
+        .h4 {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: var(--brand-green);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .lead {
+            color: var(--neutral);
+            font-size: 1rem;
+            font-weight: 400;
+        }
+        .body-text {
+            color: var(--neutral);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .meta {
+            font-size: 0.75rem;
+            font-weight: 500;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--neutral);
+        }
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+            font-feature-settings: "tnum";
+        }
+
+        /* === Inputs === */
+        .input-group {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 0.75rem 1rem;
+            transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+        }
+        .input-group:focus-within {
+            border-color: var(--brand-green);
+            background: var(--white);
+            box-shadow: 0 0 0 3px rgba(69, 147, 91, 0.12);
+        }
+        .input-group label {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--neutral);
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        .input-group input[type="number"] {
+            background: transparent;
+            color: var(--ink);
+            width: 100%;
+            padding: 0;
+            border: none;
+            outline: none;
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] { -moz-appearance: textfield; }
+
+        /* === Slider === */
+        input[type=range] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            background: var(--border);
+            border-radius: 8px;
+            height: 6px;
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--brand-green);
+            cursor: pointer;
+            border: 3px solid var(--white);
+            box-shadow: 0 2px 6px rgba(47, 109, 65, 0.3);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 2px 10px rgba(47, 109, 65, 0.5);
+        }
+        input[type=range]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--brand-green);
+            cursor: pointer;
+            border: 3px solid var(--white);
+            box-shadow: 0 2px 6px rgba(47, 109, 65, 0.3);
+        }
+
+        /* === Buttons === */
+        .btn-primary {
+            background: var(--brand-green);
+            border: 1px solid var(--brand-green);
+            color: var(--white);
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 0.95rem;
+            padding: 0.875rem 1.5rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgba(47, 109, 65, 0.1);
+        }
+        .btn-primary:hover {
+            background: var(--brand-green-dark);
+            border-color: var(--brand-green-dark);
+            box-shadow: 0 4px 12px rgba(47, 109, 65, 0.2);
+        }
+        .btn-primary:active {
+            transform: translateY(1px);
+        }
+
+        /* === Scrollbar === */
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: var(--surface); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--neutral); }
+
+        /* === Chart hover indicator === */
+        #chart-data-window {
+            width: fit-content;
+            max-width: 100%;
+            margin: 0 auto 1.5rem auto;
+            padding: 0.625rem 1rem;
+            border-radius: var(--radius-md);
+            background: var(--white);
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 12px rgba(26, 38, 32, 0.06);
+            pointer-events: auto;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+            white-space: nowrap;
+        }
+        #chart-data-window.visible { opacity: 1; }
+        #chart-data-window ul {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.25rem;
+            flex-wrap: wrap;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        #chart-data-window li {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--ink);
+        }
+        #chart-data-window p {
+            text-align: center;
+            font-size: 0.85rem;
+            margin: 0 0 0.5rem 0;
+            color: var(--ink);
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+        }
+
+        /* === Tables === */
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            background: var(--white);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+            white-space: nowrap;
+        }
+        th {
+            text-align: left;
+            padding: 0.75rem 1rem;
+            background: var(--surface);
+            color: var(--neutral);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        td {
+            padding: 0.75rem 1rem;
+            color: var(--ink);
+            border-bottom: 1px solid var(--border);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: var(--surface-alt); }
+
+        /* Lentelės paryškinimai */
+        .row-annuity td {
+            background-color: rgba(47, 109, 65, 0.08) !important;
+            color: var(--brand-green-dark);
+            font-weight: 700;
+        }
+        .row-linear td {
+            background-color: rgba(194, 65, 12, 0.08) !important;
+            color: #9A3412;
+            font-weight: 700;
+        }
+
+        /* === Tooltips === */
+        .tooltip-container { position: relative; display: inline-flex; align-items: center; }
+        .tooltip-icon {
+            margin-left: 6px;
+            width: 14px;
+            height: 14px;
+            background-color: var(--border);
+            color: var(--neutral);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            cursor: help;
+            transition: all 0.2s;
+        }
+        .tooltip-container:hover .tooltip-icon {
+            background-color: var(--brand-green);
+            color: var(--white);
+        }
+        .tooltip-text {
+            visibility: hidden;
+            width: 240px;
+            background-color: var(--ink);
+            color: var(--white);
+            text-align: center;
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
+            position: absolute;
+            z-index: 50;
+            bottom: 130%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.2s;
+            font-size: 0.75rem;
+            line-height: 1.5;
+            box-shadow: 0 8px 20px rgba(26, 38, 32, 0.2);
+            font-weight: 400;
+        }
+        .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: var(--ink) transparent transparent transparent;
+        }
+        .tooltip-container:hover .tooltip-text { visibility: visible; opacity: 1; }
+
+        /* === Side accent bars (Pagrindiniai skirtumai) === */
+        .accent-bar-annuity {
+            border-left: 3px solid var(--brand-green-dark);
+            background: var(--surface);
+            padding: 1.25rem 1.25rem 1.25rem 1.5rem;
+            border-radius: 0 var(--radius-md) var(--radius-md) 0;
+        }
+        .accent-bar-linear {
+            border-left: 3px solid #C2410C;
+            background: var(--surface);
+            padding: 1.25rem 1.25rem 1.25rem 1.5rem;
+            border-radius: 0 var(--radius-md) var(--radius-md) 0;
+        }
+
+        /* Summary panel sub-section (su investavimu) */
+        .panel-section-divider {
+            border-top: 1px solid var(--border);
+            background: var(--surface);
+        }
+
+        /* Slider value chips */
+        .chip {
+            display: inline-block;
+            padding: 0.25rem 0.625rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .chip-neutral {
+            background: var(--surface);
+            color: var(--ink);
+            border: 1px solid var(--border);
+        }
+        .chip-past {
+            background: rgba(194, 65, 12, 0.1);
+            color: #9A3412;
+            border: 1px solid rgba(194, 65, 12, 0.2);
+        }
+        .chip-future {
+            background: rgba(47, 109, 65, 0.1);
+            color: var(--brand-green-dark);
+            border: 1px solid rgba(47, 109, 65, 0.25);
+        }
+
+        /* Decorative gradient orb (subtle, ant tamsių sekcijų) */
+        .hero-orb {
+            position: absolute;
+            top: -120px;
+            right: -120px;
+            width: 320px;
+            height: 320px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(69, 147, 91, 0.08) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* === Layout === */
+        .main-content-wrapper {
+            position: relative;
+            z-index: 1;
+            padding-top: 1rem;
+            padding-bottom: 4rem;
+        }
+
+        /* Result value styling */
+        .value-positive { color: var(--brand-green-dark); }
+        .value-default { color: var(--ink); }
+
+        /* Disclaimer styling */
+        .disclaimer-panel {
+            border-left: 3px solid var(--neutral-light);
+            background: var(--surface);
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+    <div class="main-content-wrapper max-w-4xl mx-auto space-y-10">
+        <header class="text-center pt-4 relative">
+            <div class="hero-orb"></div>
+            <p class="meta mb-3" style="color: var(--brand-green);">Skaičiuoklė</p>
+            <h1 class="h1 mb-3">Būsto paskolos ir investavimo skaičiuoklė</h1>
+            <p class="lead">Palyginkite paskolos grąžinimo strategijas su lygiagrečiu investavimu.</p>
+        </header>
+
+        <section id="inputSection" class="panel overflow-hidden p-6 sm:p-10 space-y-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-8">
+                <div>
+                    <h3 class="h3 mb-5">Paskolos sąlygos</h3>
+                    <div class="space-y-4">
+                        <div class="input-group">
+                            <label for="loanAmount">Paskolos suma (€)</label>
+                            <input type="number" id="loanAmount" name="loanAmount" value="150000" min="0" step="1000">
+                        </div>
+                        <div class="input-group">
+                            <div class="tooltip-container">
+                                <label for="interestRate">Vidutinė palūkanų norma (%)</label>
+                                <span class="tooltip-icon">?</span>
+                                <span class="tooltip-text">Bendra palūkanų norma, kurią sudaro banko marža ir kintama palūkanų dalis (Lietuvoje – EURIBOR). Įveskite prognozuojamą vidurkį per visą paskolos laikotarpį.</span>
+                            </div>
+                            <input type="number" id="interestRate" name="interestRate" value="5" min="0" max="30" step="0.1">
+                        </div>
+                        <div class="input-group">
+                            <label for="loanTermYears">Paskolos terminas (metais)</label>
+                            <input type="number" id="loanTermYears" name="loanTermYears" value="30" min="1" max="40" step="1">
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="h3 mb-5">Investavimo sąlygos</h3>
+                    <div class="space-y-4">
+                        <div class="input-group">
+                            <label for="initialInvestment">Pradinė investicijos suma (€)</label>
+                            <input type="number" id="initialInvestment" name="initialInvestment" value="0" min="0" step="100">
+                        </div>
+                        <div class="input-group">
+                            <label for="monthlyInvestment">Mėnesinė investuojama suma (€)</label>
+                            <input type="number" id="monthlyInvestment" name="monthlyInvestment" value="150" min="0" step="10">
+                        </div>
+                        <div class="input-group">
+                            <div class="tooltip-container">
+                                <label for="annualInvestmentReturn">Metinis investicinis pelningumas (%)</label>
+                                <span class="tooltip-icon">?</span>
+                                <span class="tooltip-text">Prognozuojama vidutinė metinė investicijų grąža. Istoriškai pasaulio akcijų indeksai vidutiniškai uždirbo apie 7–10% per metus.</span>
+                            </div>
+                            <input type="number" id="annualInvestmentReturn" name="annualInvestmentReturn" value="10" min="0" max="50" step="0.1">
+                        </div>
+                        <div class="input-group">
+                            <div class="tooltip-container">
+                                <label for="gpmRate">GPM (%)</label>
+                                <span class="tooltip-icon">?</span>
+                                <span class="tooltip-text">Gyventojų pajamų mokestis, taikomas investicijų pelnui. Tarifas priklauso nuo pelno dydžio ir galiojančių įstatymų. Pasitikslinkite aktualią informaciją VMI.</span>
+                            </div>
+                            <input type="number" id="gpmRate" name="gpmRate" value="15" min="0" max="50" step="1">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SLIDERIS -->
+            <div class="input-group" style="background: var(--surface-alt);">
+                <div class="flex justify-between items-center mb-3 flex-wrap gap-2">
+                    <div class="tooltip-container">
+                        <label for="timeShiftSlider" style="font-size: 0.875rem; color: var(--ink); font-weight: 600;">Paskolos pradžia (lyginant su investavimu)</label>
+                        <span class="tooltip-icon">?</span>
+                        <span class="tooltip-text">Pasirinkite, jei jau mokate paskolą kelis metus arba planuojate ją imti tik ateityje, o investuoti pradedate dabar.</span>
+                    </div>
+                    <span id="sliderValueDisplay" class="chip chip-neutral">Vienu metu (0 m.)</span>
+                </div>
+                <input type="range" id="timeShiftSlider" name="timeShiftSlider" min="-30" max="30" value="0" step="1" class="mt-2">
+                <div class="flex justify-between text-xs mt-3" style="color: var(--neutral);">
+                    <span>← Jau moku (-30 m.)</span>
+                    <span>Vienu metu</span>
+                    <span>Ateityje (+30 m.) →</span>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4">
+                <button id="calculateButton" class="w-full btn-primary">
+                    Skaičiuoti
+                </button>
+            </div>
+        </section>
+
+        <div id="resultsWrapper" class="space-y-10" style="display: none;">
+            <section class="panel overflow-hidden p-6 sm:p-10">
+                <h3 id="chartTitle" class="h2 text-center mb-6">Paskolos grąžinimo ir investavimo projekcija</h3>
+                <div id="chart-data-window">
+                    <p><span id="hover-month">--</span></p>
+                    <ul>
+                        <li><span class="inline-block w-3 h-3 rounded-full" style="background-color: var(--chart-annuity);"></span><span>Anuitetas:</span> <span id="hover-annuity" class="font-bold mono">-</span></li>
+                        <li><span class="inline-block w-3 h-3 rounded-full" style="background-color: var(--chart-linear);"></span><span>Linijinis:</span> <span id="hover-linear" class="font-bold mono">-</span></li>
+                        <li><span class="inline-block w-3 h-3 rounded-full" style="background-color: var(--chart-investment);"></span><span>Investicijos:</span> <span id="hover-investment" class="font-bold mono">-</span></li>
+                    </ul>
+                </div>
+                <div class="h-96" id="chart-container">
+                    <canvas id="loanChart"></canvas>
+                </div>
+            </section>
+
+            <!-- === Pagrindiniai skirtumai === -->
+            <section class="panel overflow-hidden p-6 sm:p-10">
+                <h3 class="h2 text-center mb-8">Pagrindiniai skirtumai</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="accent-bar-annuity">
+                        <h4 class="h3 mb-3" style="color: var(--brand-green-dark);">Anuiteto metodas</h4>
+                        <ul class="space-y-2 body-text" style="list-style: disc; padding-left: 1.25rem;">
+                            <li><strong style="color: var(--brand-green-dark);">Privalumas:</strong> visą laiką mokate vienodo dydžio įmokas. Tai palengvina biudžeto planavimą.</li>
+                            <li><strong style="color: #9A3412;">Trūkumas:</strong> iš viso sumokate daugiau palūkanų, nes paskolos likutis mažėja lėčiau.</li>
+                        </ul>
+                    </div>
+                    <div class="accent-bar-linear">
+                        <h4 class="h3 mb-3" style="color: #9A3412;">Linijinis metodas</h4>
+                        <ul class="space-y-2 body-text" style="list-style: disc; padding-left: 1.25rem;">
+                            <li><strong style="color: var(--brand-green-dark);">Privalumas:</strong> iš viso sumokate mažiau palūkanų, nes paskolos dalį grąžinate greičiau.</li>
+                            <li><strong style="color: #9A3412;">Trūkumas:</strong> pirmosios įmokos yra didžiausios ir palaipsniui mažėja. Reikalingos didesnės pradinės pajamos.</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- === Apibendrinimo kortelės === -->
+            <div id="summarySectionWrapper" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Anuitetas -->
+                <div class="panel overflow-hidden flex flex-col">
+                    <div class="p-6 sm:p-8 pb-5 flex-grow">
+                        <h3 class="h3 mb-5 pb-3" style="color: var(--brand-green-dark); border-bottom: 1px solid var(--border);">Anuitetinis grąžinimo būdas</h3>
+                        <div class="space-y-3">
+                            <p class="body-text flex justify-between items-center"><span>Viso sumokama palūkanų:</span> <span id="totalInterestAnnuity" class="font-bold mono value-default text-base">-</span></p>
+                            <p class="body-text flex justify-between items-center"><span>Viso sumokama bankui <span id="annuity-loan-term" class="text-xs"></span>:</span> <span id="totalPaymentAnnuity" class="font-bold mono value-default text-base">-</span></p>
+                        </div>
+                    </div>
+                    <div class="panel-section-divider p-6 sm:p-8 pt-5">
+                        <h4 class="meta mb-4" style="color: var(--brand-green-dark);">Su investavimu</h4>
+                        <div class="space-y-3">
+                            <p class="body-text flex justify-between items-center"><span>Investicijos padengia skolą per:</span> <span id="payoffMonthAnnuity" class="font-bold mono value-positive text-base">-</span></p>
+                            <p class="body-text flex justify-between items-center"><span>Viso išleista (įmokos + indėliai):</span> <span id="totalOutlayAnnuity" class="font-bold mono value-default text-base">-</span></p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Linijinis -->
+                <div class="panel overflow-hidden flex flex-col">
+                    <div class="p-6 sm:p-8 pb-5 flex-grow">
+                        <h3 class="h3 mb-5 pb-3" style="color: #9A3412; border-bottom: 1px solid var(--border);">Linijinis grąžinimo būdas</h3>
+                        <div class="space-y-3">
+                            <p class="body-text flex justify-between items-center"><span>Viso sumokama palūkanų:</span> <span id="totalInterestLinear" class="font-bold mono value-default text-base">-</span></p>
+                            <p class="body-text flex justify-between items-center"><span>Viso sumokama bankui <span id="linear-loan-term" class="text-xs"></span>:</span> <span id="totalPaymentLinear" class="font-bold mono value-default text-base">-</span></p>
+                        </div>
+                    </div>
+                    <div class="panel-section-divider p-6 sm:p-8 pt-5">
+                        <h4 class="meta mb-4" style="color: #9A3412;">Su investavimu</h4>
+                        <div class="space-y-3">
+                            <p class="body-text flex justify-between items-center"><span>Investicijos padengia skolą per:</span> <span id="payoffMonthLinear" class="font-bold mono value-positive text-base">-</span></p>
+                            <p class="body-text flex justify-between items-center"><span>Viso išleista (įmokos + indėliai):</span> <span id="totalOutlayLinear" class="font-bold mono value-default text-base">-</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- === Rezultatų apibendrinimas === -->
+            <section id="resultsSummarySection" class="panel panel-soft overflow-hidden p-6 sm:p-10" style="display: none;">
+                <h3 class="h2 text-center mb-6">Rezultatų apibendrinimas</h3>
+                <p id="summaryText" class="text-center" style="color: var(--ink); font-size: 1.0625rem; line-height: 1.7; font-weight: 400;"></p>
+            </section>
+
+            <section class="panel overflow-hidden p-6 sm:p-10">
+                <h4 class="h3 mb-4" style="color: var(--brand-green-dark);">Paskolos grąžinimo grafikas: anuitetinis</h4>
+                <div class="table-wrapper max-h-96 custom-scrollbar">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Mėn.</th><th>Įmoka</th><th>Kreditas</th><th>Palūkanos</th><th>Skola</th>
+                            </tr>
+                        </thead>
+                        <tbody id="annuityTableBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="panel overflow-hidden p-6 sm:p-10">
+                <h4 class="h3 mb-4" style="color: #9A3412;">Paskolos grąžinimo grafikas: linijinis</h4>
+                <div class="table-wrapper max-h-96 custom-scrollbar">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Mėn.</th><th>Įmoka</th><th>Kreditas</th><th>Palūkanos</th><th>Skola</th>
+                            </tr>
+                        </thead>
+                        <tbody id="linearTableBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="panel overflow-hidden p-6 sm:p-10">
+                <h4 class="h3 mb-4" style="color: var(--brand-green);">Investavimo grafikas</h4>
+                <div class="table-wrapper max-h-96 custom-scrollbar">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Mėn.</th>
+                                <th>Investuojama suma</th>
+                                <th>Viso investuota</th>
+                                <th>Investicijose</th>
+                                <th>Investicijose po mok.</th>
+                            </tr>
+                        </thead>
+                        <tbody id="investmentTableBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- === Disclaimer'iai === -->
+            <section class="panel panel-soft overflow-hidden p-6 sm:p-10">
+                <h3 class="h3 mb-3">Apie skaičiavimus</h3>
+                <p class="body-text">
+                    Paskolos skaičiavimai atliekami naudojant standartines anuitetinio ir linijinio kredito grąžinimo metodų formules. Investicijų prieaugis apskaičiuojamas pritaikant sudėtinių palūkanų principą, kuomet kiekvieno mėnesio grąža yra pridedama prie bendros investicijų sumos ir reinvestuojama. Gyventojų pajamų mokestis (GPM) yra taikomas tik investicijų pelno daliai.
+                </p>
+            </section>
+            <section class="panel panel-soft overflow-hidden p-6 sm:p-10">
+                <h3 class="h3 mb-3">Rezultatų skirtumai</h3>
+                <p class="body-text">
+                    Šios skaičiuoklės rezultatai gali skirtis nuo kitų skaičiuoklių dėl kelių priežasčių: palūkanų normos apvalinimo taisyklių, skirtingų dienų skaičiaus mėnesyje ignoravimo (naudojant standartizuotą mėnesio palūkanų normą) bei prielaidos, kad palūkanų norma išlieka nekintama per visą paskolos laikotarpį. Taip pat, skirtingos skaičiuoklės gali taikyti skirtingus mokesčių apskaičiavimo metodus.
+                </p>
+            </section>
+            <section class="panel disclaimer-panel overflow-hidden p-6 sm:p-10">
+                <h3 class="h3 mb-3" style="color: var(--ink);">Atsakomybės apribojimas</h3>
+                <p class="body-text">
+                    Ši skaičiuoklė skirta tik edukaciniams ir informaciniams tikslams. Pateikiami skaičiavimai yra hipotetiniai, pagrįsti jūsų įvestais duomenimis, ir neturėtų būti laikomi finansine, investicine ar teisine rekomendacija. Prieš priimant bet kokius finansinius sprendimus, rekomenduojama pasikonsultuoti su kvalifikuotais finansų patarėjais.
+                </p>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // === Globalūs Chart.js stiliai (nustatomi vieną kartą) ===
+        Chart.defaults.font.family = "'Figtree', 'Inter', sans-serif";
+        Chart.defaults.font.size = 12;
+        Chart.defaults.color = '#666666';
+
+        let loanChart = null;
+        let animationState = {
+            id: null,
+            isPaused: false,
+            elapsedTime: 0,
+            lastFrameTime: null,
+            totalFrames: 0,
+            animationData: {},
+            currentPoints: []
+        };
+
+        // Linear interpolation helper
+        function lerp(start, end, amt) {
+            return (1 - amt) * start + amt * end;
+        }
+
+        // === DOM nuorodos ===
+        const dataWindow = document.getElementById('chart-data-window');
+        const hoverMonthEl = document.getElementById('hover-month');
+        const hoverAnnuityEl = document.getElementById('hover-annuity');
+        const hoverLinearEl = document.getElementById('hover-linear');
+        const hoverInvestmentEl = document.getElementById('hover-investment');
+
+        const loanAmountInput = document.getElementById('loanAmount');
+        const interestRateInput = document.getElementById('interestRate');
+        const loanTermYearsInput = document.getElementById('loanTermYears');
+        const initialInvestmentInput = document.getElementById('initialInvestment');
+        const monthlyInvestmentInput = document.getElementById('monthlyInvestment');
+        const annualInvestmentReturnInput = document.getElementById('annualInvestmentReturn');
+        const gpmRateInput = document.getElementById('gpmRate');
+        const timeShiftSlider = document.getElementById('timeShiftSlider');
+        const sliderValueDisplay = document.getElementById('sliderValueDisplay');
+        const calculateButton = document.getElementById('calculateButton');
+
+        const totalPaymentAnnuityEl = document.getElementById('totalPaymentAnnuity');
+        const totalPaymentLinearEl = document.getElementById('totalPaymentLinear');
+        const totalInterestAnnuityEl = document.getElementById('totalInterestAnnuity');
+        const totalInterestLinearEl = document.getElementById('totalInterestLinear');
+        const payoffMonthAnnuityEl = document.getElementById('payoffMonthAnnuity');
+        const totalOutlayAnnuityEl = document.getElementById('totalOutlayAnnuity');
+        const payoffMonthLinearEl = document.getElementById('payoffMonthLinear');
+        const totalOutlayLinearEl = document.getElementById('totalOutlayLinear');
+        const annuityLoanTermEl = document.getElementById('annuity-loan-term');
+        const linearLoanTermEl = document.getElementById('linear-loan-term');
+        const resultsWrapper = document.getElementById('resultsWrapper');
+
+        const resultsSummarySection = document.getElementById('resultsSummarySection');
+        const summaryTextEl = document.getElementById('summaryText');
+
+        // === Sliderio reikšmių rodymas ===
+        timeShiftSlider.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            if (val < 0) {
+                sliderValueDisplay.textContent = `Jau moku paskolą ${Math.abs(val)} m.`;
+                sliderValueDisplay.className = 'chip chip-past';
+            } else if (val > 0) {
+                sliderValueDisplay.textContent = `Paskolą imsiu po ${val} m.`;
+                sliderValueDisplay.className = 'chip chip-future';
+            } else {
+                sliderValueDisplay.textContent = `Vienu metu (0 m.)`;
+                sliderValueDisplay.className = 'chip chip-neutral';
+            }
+        });
+
+        // === Formatavimo funkcijos ===
+        function formatCurrency(value) {
+            if (typeof value !== 'number' || isNaN(value)) { return '— €'; }
+            return value.toLocaleString('lt-LT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 });
+        }
+
+        function formatYearsAndMonths(totalMonths) {
+            if (typeof totalMonths !== 'number' || totalMonths <= 0) {
+                return "Niekada";
+            }
+            const years = Math.floor(totalMonths / 12);
+            const months = totalMonths % 12;
+
+            let result = '';
+            if (years > 0) {
+                result += `${years} m.`;
+            }
+            if (months > 0) {
+                if (years > 0) {
+                    result += ' ir ';
+                }
+                result += `${months} mėn.`;
+            }
+            return result || '0 mėn.';
+        }
+
+        // === Padengimo mėnesio paieška ===
+        function findPayoffMonth(loanBalances, invBalances) {
+            const len = Math.min(loanBalances.length, invBalances.length);
+            for (let month = 1; month < len; month++) {
+                if (invBalances[month] >= loanBalances[month] && loanBalances[month] > 0.01) {
+                    return month;
+                }
+            }
+            return -1;
+        }
+
+        // === Pagrindinė skaičiavimo funkcija ===
+        function calculateAndDisplayResults() {
+            // 1. Įvestys
+            const loanAmount = parseFloat(loanAmountInput.value);
+            const annualInterestRate = parseFloat(interestRateInput.value);
+            const loanTermYears = parseInt(loanTermYearsInput.value);
+            const initialInvestment = parseFloat(initialInvestmentInput.value) || 0;
+            const monthlyInvestment = parseFloat(monthlyInvestmentInput.value) || 0;
+            const annualInvestmentReturn = parseFloat(annualInvestmentReturnInput.value);
+            const gpmRate = parseFloat(gpmRateInput.value);
+            const sliderValueYears = parseInt(timeShiftSlider.value);
+
+            // Validacija
+            if ([loanAmount, annualInterestRate, loanTermYears, annualInvestmentReturn, gpmRate].some(v => isNaN(v))) {
+                alert("Prašome įvesti teisingus skaitinius duomenis.");
+                return;
+            }
+            if (loanAmount <= 0 || loanTermYears <= 0) {
+                alert("Paskolos suma ir terminas turi būti didesni už nulį.");
+                return;
+            }
+            if (annualInterestRate < 0 || annualInvestmentReturn < 0 || gpmRate < 0) {
+                alert("Palūkanų normos ir GPM negali būti neigiami.");
+                return;
+            }
+
+            resultsWrapper.style.display = 'block';
+
+            const loanDurationMonths = loanTermYears * 12;
+            let chartDurationMonths = 0;
+            let pastMonths = 0;
+            let futureMonths = 0;
+
+            if (sliderValueYears < 0) {
+                pastMonths = Math.abs(sliderValueYears) * 12;
+                if (pastMonths >= loanDurationMonths) {
+                    alert("Klaida: paskola jau išmokėta pagal jūsų nurodytą praėjusį laiką.");
+                    return;
+                }
+                chartDurationMonths = loanDurationMonths - pastMonths;
+            } else {
+                futureMonths = sliderValueYears * 12;
+                chartDurationMonths = loanDurationMonths + futureMonths;
+            }
+
+            const monthlyInterestRate = annualInterestRate / 12 / 100;
+
+            // Anuiteto mėnesinė įmoka
+            const annuityPayment = monthlyInterestRate > 0
+                ? loanAmount * (monthlyInterestRate * Math.pow(1 + monthlyInterestRate, loanDurationMonths)) / (Math.pow(1 + monthlyInterestRate, loanDurationMonths) - 1)
+                : loanAmount / loanDurationMonths;
+            const linearPrincipalPayment = loanAmount / loanDurationMonths;
+
+            const arrSize = chartDurationMonths + 1;
+            const annuityBalances = new Array(arrSize).fill(0);
+            const linearBalances = new Array(arrSize).fill(0);
+            const annuityPayments = new Array(arrSize).fill(0);
+            const linearPayments = new Array(arrSize).fill(0);
+            const annuityInterestPaid = new Array(arrSize).fill(0);
+            const linearInterestPaid = new Array(arrSize).fill(0);
+            const annuityPrincipalPaid = new Array(arrSize).fill(0);
+            const linearPrincipalPaid = new Array(arrSize).fill(0);
+
+            let currentAnnuityBalance = loanAmount;
+            let currentLinearBalance = loanAmount;
+            let totalAnnuityInterestPast = 0;
+            let totalLinearInterestPast = 0;
+
+            // 2. Praeities mėnesių apskaita (jei slideris < 0)
+            for (let p = 1; p <= pastMonths; p++) {
+                const aInt = currentAnnuityBalance * monthlyInterestRate;
+                currentAnnuityBalance -= (annuityPayment - aInt);
+                totalAnnuityInterestPast += aInt;
+
+                const lInt = currentLinearBalance * monthlyInterestRate;
+                currentLinearBalance -= linearPrincipalPayment;
+                totalLinearInterestPast += lInt;
+            }
+
+            let annuityTotalInterest = totalAnnuityInterestPast;
+            let linearTotalInterest = totalLinearInterestPast;
+
+            // 3. Diagramos laikotarpio apskaita
+            for (let i = 0; i <= chartDurationMonths; i++) {
+                if (sliderValueYears < 0) {
+                    // Slideris neigiamas: paskola jau prasidėjusi
+                    if (i === 0) {
+                        annuityBalances[0] = currentAnnuityBalance;
+                        linearBalances[0] = currentLinearBalance;
+                    } else {
+                        const aInt = currentAnnuityBalance * monthlyInterestRate;
+                        const aPrin = annuityPayment - aInt;
+                        currentAnnuityBalance -= aPrin;
+                        annuityTotalInterest += aInt;
+                        annuityPayments[i] = annuityPayment;
+                        annuityPrincipalPaid[i] = aPrin;
+                        annuityInterestPaid[i] = aInt;
+                        annuityBalances[i] = Math.max(0, currentAnnuityBalance);
+
+                        const lInt = currentLinearBalance * monthlyInterestRate;
+                        const lPay = linearPrincipalPayment + lInt;
+                        currentLinearBalance -= linearPrincipalPayment;
+                        linearTotalInterest += lInt;
+                        linearPayments[i] = lPay;
+                        linearPrincipalPaid[i] = linearPrincipalPayment;
+                        linearInterestPaid[i] = lInt;
+                        linearBalances[i] = Math.max(0, currentLinearBalance);
+                    }
+                } else {
+                    // Slideris >= 0: paskola dabar arba ateityje
+                    if (i < futureMonths) {
+                        annuityBalances[i] = 0;
+                        linearBalances[i] = 0;
+                    } else if (i === futureMonths) {
+                        currentAnnuityBalance = loanAmount;
+                        currentLinearBalance = loanAmount;
+                        annuityBalances[i] = currentAnnuityBalance;
+                        linearBalances[i] = currentLinearBalance;
+                    } else {
+                        const activeMonth = i - futureMonths;
+                        if (activeMonth <= loanDurationMonths) {
+                            const aInt = currentAnnuityBalance * monthlyInterestRate;
+                            const aPrin = annuityPayment - aInt;
+                            currentAnnuityBalance -= aPrin;
+                            annuityTotalInterest += aInt;
+                            annuityPayments[i] = annuityPayment;
+                            annuityPrincipalPaid[i] = aPrin;
+                            annuityInterestPaid[i] = aInt;
+                            annuityBalances[i] = Math.max(0, currentAnnuityBalance);
+
+                            const lInt = currentLinearBalance * monthlyInterestRate;
+                            const lPay = linearPrincipalPayment + lInt;
+                            currentLinearBalance -= linearPrincipalPayment;
+                            linearTotalInterest += lInt;
+                            linearPayments[i] = lPay;
+                            linearPrincipalPaid[i] = linearPrincipalPayment;
+                            linearInterestPaid[i] = lInt;
+                            linearBalances[i] = Math.max(0, currentLinearBalance);
+                        } else {
+                            annuityBalances[i] = 0;
+                            linearBalances[i] = 0;
+                        }
+                    }
+                }
+            }
+
+            // 4. Investicijų prieaugio apskaita
+            const grossInvestmentBalances = new Array(arrSize).fill(0);
+            const netInvestmentBalances = new Array(arrSize).fill(0);
+            let currentGross = initialInvestment;
+            const monthlyInvRate = (annualInvestmentReturn / 100) / 12;
+            const taxRate = gpmRate / 100;
+
+            grossInvestmentBalances[0] = currentGross;
+            netInvestmentBalances[0] = currentGross;
+
+            for (let i = 1; i <= chartDurationMonths; i++) {
+                currentGross = (currentGross + monthlyInvestment) * (1 + monthlyInvRate);
+                const totalInvestedNow = initialInvestment + (monthlyInvestment * i);
+                const profit = currentGross - totalInvestedNow;
+                const tax = profit > 0 ? profit * taxRate : 0;
+                grossInvestmentBalances[i] = currentGross;
+                netInvestmentBalances[i] = currentGross - tax;
+            }
+
+            // 5. Padengimo mėnesių paieška
+            const payoffAnnuity = findPayoffMonth(annuityBalances, netInvestmentBalances);
+            const payoffLinear = findPayoffMonth(linearBalances, netInvestmentBalances);
+
+            // Laikas nuo paskolos paėmimo momento (ne nuo investavimo pradžios):
+            // - Jei paskola ateityje (futureMonths > 0): atimame futureMonths
+            // - Jei paskola jau mokama (pastMonths > 0): pridedame pastMonths
+            // - Vienu metu: paliekame
+            const payoffAnnuityFromLoan = payoffAnnuity > 0
+                ? (sliderValueYears < 0 ? payoffAnnuity + pastMonths : payoffAnnuity - futureMonths)
+                : -1;
+            const payoffLinearFromLoan = payoffLinear > 0
+                ? (sliderValueYears < 0 ? payoffLinear + pastMonths : payoffLinear - futureMonths)
+                : -1;
+
+            // 6. Apibendrinimo kortelių užpildymas
+            totalInterestAnnuityEl.textContent = formatCurrency(annuityTotalInterest);
+            totalPaymentAnnuityEl.textContent = formatCurrency(loanAmount + annuityTotalInterest);
+            annuityLoanTermEl.textContent = `(viso per paskolos laikotarpį)`;
+            payoffMonthAnnuityEl.textContent = formatYearsAndMonths(payoffAnnuityFromLoan);
+
+            const futureAnnuityPaidToBankTotal = annuityPayments.reduce((a, b) => a + b, 0);
+            let outlayWithInvestingAnnuity = 0;
+            if (payoffAnnuity > 0) {
+                let bankPaidToPayoff = 0;
+                for (let i = 1; i <= payoffAnnuity; i++) bankPaidToPayoff += annuityPayments[i];
+                outlayWithInvestingAnnuity = bankPaidToPayoff + initialInvestment + (monthlyInvestment * payoffAnnuity);
+                totalOutlayAnnuityEl.textContent = formatCurrency(outlayWithInvestingAnnuity);
+            } else {
+                totalOutlayAnnuityEl.textContent = '—';
+            }
+
+            totalInterestLinearEl.textContent = formatCurrency(linearTotalInterest);
+            totalPaymentLinearEl.textContent = formatCurrency(loanAmount + linearTotalInterest);
+            linearLoanTermEl.textContent = `(viso per paskolos laikotarpį)`;
+            payoffMonthLinearEl.textContent = formatYearsAndMonths(payoffLinearFromLoan);
+
+            const futureLinearPaidToBankTotal = linearPayments.reduce((a, b) => a + b, 0);
+            let outlayWithInvestingLinear = 0;
+            if (payoffLinear > 0) {
+                let bankPaidToPayoff = 0;
+                for (let i = 1; i <= payoffLinear; i++) bankPaidToPayoff += linearPayments[i];
+                outlayWithInvestingLinear = bankPaidToPayoff + initialInvestment + (monthlyInvestment * payoffLinear);
+                totalOutlayLinearEl.textContent = formatCurrency(outlayWithInvestingLinear);
+            } else {
+                totalOutlayLinearEl.textContent = '—';
+            }
+
+            // 7. Lentelių užpildymas (su DocumentFragment optimizacija)
+            renderTable('annuityTableBody', chartDurationMonths, payoffAnnuity, (i) => ({
+                payment: annuityPayments[i],
+                principal: annuityPrincipalPaid[i],
+                interest: annuityInterestPaid[i],
+                balance: annuityBalances[i],
+                rowClass: 'row-annuity'
+            }));
+
+            renderTable('linearTableBody', chartDurationMonths, payoffLinear, (i) => ({
+                payment: linearPayments[i],
+                principal: linearPrincipalPaid[i],
+                interest: linearInterestPaid[i],
+                balance: linearBalances[i],
+                rowClass: 'row-linear'
+            }));
+
+            renderInvestmentTable('investmentTableBody', chartDurationMonths, payoffAnnuity, payoffLinear, {
+                initialInvestment, monthlyInvestment, grossInvestmentBalances, netInvestmentBalances
+            });
+
+            // 8. Tekstinis apibendrinimas
+            if (payoffAnnuity > 0 || payoffLinear > 0) {
+                let annuityPart = "";
+                if (payoffAnnuity > 0) {
+                    const timeSavedMonthsAnnuity = chartDurationMonths - payoffAnnuity;
+                    const totalSavedAnnuity = futureAnnuityPaidToBankTotal - outlayWithInvestingAnnuity;
+                    annuityPart = `Pagal <b style='color: var(--brand-green-dark)'>anuiteto</b> metodą, investuodami po ${formatCurrency(monthlyInvestment)} per mėnesį, paskolą galėtumėte padengti <b>${formatYearsAndMonths(timeSavedMonthsAnnuity)}</b> anksčiau ir sutaupyti apie <b>${formatCurrency(totalSavedAnnuity)}</b> per ateinantį laikotarpį.`;
+                }
+
+                let linearPart = "";
+                if (payoffLinear > 0) {
+                    const timeSavedMonthsLinear = chartDurationMonths - payoffLinear;
+                    const totalSavedLinear = futureLinearPaidToBankTotal - outlayWithInvestingLinear;
+                    linearPart = `Pagal <b style='color: #9A3412'>linijinį</b> metodą tai pavyktų padaryti <b>${formatYearsAndMonths(timeSavedMonthsLinear)}</b> anksčiau, sutaupant apie <b>${formatCurrency(totalSavedLinear)}</b> per ateinantį laikotarpį.`;
+                }
+
+                summaryTextEl.innerHTML = [annuityPart, linearPart].filter(Boolean).join(' ');
+                resultsSummarySection.style.display = 'block';
+            } else {
+                summaryTextEl.innerHTML = 'Pagal pateiktus duomenis, investicijos nepadengia paskolos greičiau nei per nustatytą terminą.';
+                resultsSummarySection.style.display = 'block';
+            }
+
+            // 9. Diagrama
+            updateChart(annuityBalances, linearBalances, netInvestmentBalances, chartDurationMonths);
+        }
+
+        // === Lentelių rendering'as (optimizuotas su template literal'ais bet vienu innerHTML priskyrimu) ===
+        function renderTable(tbodyId, durationMonths, payoffMonth, getRowData) {
+            const rows = [];
+            for (let i = 1; i <= durationMonths; i++) {
+                const data = getRowData(i);
+                const isPayoff = (i === payoffMonth);
+                const payment = data.payment > 0 ? formatCurrency(data.payment) : '—';
+                const principal = data.principal > 0 ? formatCurrency(data.principal) : '—';
+                const interest = data.interest > 0 ? formatCurrency(data.interest) : '—';
+                const balance = formatCurrency(data.balance);
+                rows.push(`<tr class="${isPayoff ? data.rowClass : ''}"><td>${i}</td><td>${payment}</td><td>${principal}</td><td>${interest}</td><td>${balance}</td></tr>`);
+            }
+            document.getElementById(tbodyId).innerHTML = rows.join('');
+        }
+
+        function renderInvestmentTable(tbodyId, durationMonths, payoffAnnuity, payoffLinear, data) {
+            const rows = [];
+            for (let i = 1; i <= durationMonths; i++) {
+                const totalInvestedNow = data.initialInvestment + (data.monthlyInvestment * i);
+                let rowClass = '';
+                if (i === payoffAnnuity) rowClass = 'row-annuity';
+                else if (i === payoffLinear) rowClass = 'row-linear';
+
+                rows.push(
+                    `<tr class="${rowClass}">` +
+                    `<td>${i}</td>` +
+                    `<td>${formatCurrency(data.monthlyInvestment)}</td>` +
+                    `<td>${formatCurrency(totalInvestedNow)}</td>` +
+                    `<td>${formatCurrency(data.grossInvestmentBalances[i])}</td>` +
+                    `<td>${formatCurrency(data.netInvestmentBalances[i])}</td>` +
+                    `</tr>`
+                );
+            }
+            document.getElementById(tbodyId).innerHTML = rows.join('');
+        }
+
+        // === Animuotų taškų plugin'as diagramai ===
+        const animatedPointsPlugin = {
+            id: 'animatedPoints',
+            afterDraw: (chart) => {
+                if (!animationState.currentPoints || animationState.currentPoints.length === 0) return;
+
+                const ctx = chart.ctx;
+                ctx.save();
+
+                animationState.currentPoints.forEach(point => {
+                    const pulse = (Math.sin(Date.now() / 300) + 1) / 2;
+                    ctx.shadowBlur = 8 + pulse * 8;
+                    ctx.shadowColor = point.borderColor;
+
+                    ctx.beginPath();
+                    ctx.arc(point.x, point.y, 5, 0, 2 * Math.PI, false);
+                    ctx.fillStyle = point.borderColor;
+                    ctx.fill();
+                });
+
+                ctx.restore();
+            }
+        };
+
+        function mainAnimationLoop(timestamp) {
+            if (animationState.isPaused) {
+                animationState.id = requestAnimationFrame(mainAnimationLoop);
+                return;
+            }
+            if (!animationState.lastFrameTime) {
+                animationState.lastFrameTime = timestamp;
+            }
+
+            const deltaTime = timestamp - animationState.lastFrameTime;
+            animationState.lastFrameTime = timestamp;
+            animationState.elapsedTime += deltaTime;
+
+            const animationDuration = 31500;
+            const pauseDuration = 2000;
+            let progress = animationState.elapsedTime / animationDuration;
+
+            if (progress >= 1) {
+                progress = 1;
+                animationState.isPaused = true;
+                setTimeout(() => {
+                    animationState.elapsedTime = 0;
+                    animationState.lastFrameTime = null;
+                    animationState.isPaused = false;
+                }, pauseDuration);
+            }
+
+            const exactFrame = progress * (animationState.totalFrames);
+            const fromIndex = Math.floor(exactFrame);
+            const toIndex = Math.min(fromIndex + 1, animationState.totalFrames);
+            const interpolationFactor = exactFrame - fromIndex;
+
+            const displayIndex = Math.round(exactFrame);
+            if (displayIndex <= animationState.totalFrames) {
+                const year = Math.floor(displayIndex / 12);
+                const month = displayIndex % 12;
+                hoverMonthEl.textContent = `Metai: ${year}, mėn.: ${month}`;
+                hoverAnnuityEl.textContent = formatCurrency(animationState.animationData.annuity[displayIndex]);
+                hoverLinearEl.textContent = formatCurrency(animationState.animationData.linear[displayIndex]);
+                hoverInvestmentEl.textContent = formatCurrency(animationState.animationData.investment[displayIndex]);
+            }
+
+            animationState.currentPoints = [];
+            if (loanChart && fromIndex < animationState.totalFrames) {
+                loanChart.data.datasets.forEach((dataset, i) => {
+                    const meta = loanChart.getDatasetMeta(i);
+                    if (meta.data[fromIndex] && meta.data[toIndex]) {
+                        const fromPoint = meta.data[fromIndex].getProps(['x', 'y'], true);
+                        const toPoint = meta.data[toIndex].getProps(['x', 'y'], true);
+
+                        const x = lerp(fromPoint.x, toPoint.x, interpolationFactor);
+                        const y = lerp(fromPoint.y, toPoint.y, interpolationFactor);
+
+                        animationState.currentPoints.push({ x, y, borderColor: dataset.borderColor });
+                    }
+                });
+            }
+
+            if (loanChart) loanChart.update('none');
+
+            animationState.id = requestAnimationFrame(mainAnimationLoop);
+        }
+
+        function startChartAnimation(chart, totalFrames, animationData) {
+            if (animationState.id) {
+                cancelAnimationFrame(animationState.id);
+            }
+            animationState = {
+                id: null,
+                isPaused: false,
+                elapsedTime: 0,
+                lastFrameTime: null,
+                totalFrames: totalFrames,
+                animationData: animationData,
+                currentPoints: []
+            };
+            dataWindow.classList.add('visible');
+            animationState.id = requestAnimationFrame(mainAnimationLoop);
+        }
+
+        function updateChart(annuityData, linearData, investmentData, chartDurationMonths) {
+            const ctx = document.getElementById('loanChart').getContext('2d');
+            const labels = Array.from({ length: chartDurationMonths + 1 }, (_, i) => i);
+
+            const areaGradient = (color) => {
+                const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+                gradient.addColorStop(0, `${color}33`); // 20% opacity
+                gradient.addColorStop(1, `${color}00`);
+                return gradient;
+            };
+
+            const colors = {
+                annuity: '#2F6D41',     // Brand green dark
+                linear: '#C2410C',      // Warm accent
+                investment: '#45935B'   // Brand green
+            };
+
+            const datasets = [
+                { label: 'Skola (anuitetas)', data: annuityData, borderColor: colors.annuity, backgroundColor: areaGradient(colors.annuity), tension: 0.3, fill: true, pointRadius: 0, borderWidth: 2 },
+                { label: 'Skola (linijinis)', data: linearData, borderColor: colors.linear, backgroundColor: areaGradient(colors.linear), tension: 0.3, fill: true, pointRadius: 0, borderWidth: 2 },
+                { label: 'Investicinis kapitalas (neto)', data: investmentData, borderColor: colors.investment, backgroundColor: areaGradient(colors.investment), tension: 0.3, fill: true, pointRadius: 0, borderWidth: 2 }
+            ];
+
+            if (loanChart) { loanChart.destroy(); }
+
+            loanChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels, datasets },
+                plugins: [animatedPointsPlugin],
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Metai (nuo dabar)', color: '#666666' },
+                            ticks: {
+                                color: '#666666',
+                                callback: function(value) {
+                                    if (value % 60 === 0 || value === 0 || value === chartDurationMonths) {
+                                        return `${Math.floor(value / 12)}`;
+                                    }
+                                    return null;
+                                },
+                                autoSkip: false,
+                                maxRotation: 0
+                            },
+                            grid: { display: false },
+                            border: { color: '#E5E7EB' }
+                        },
+                        y: {
+                            title: { display: true, text: 'Tūkstančiai €', color: '#666666' },
+                            ticks: { color: '#666666', callback: (val) => `${Math.round(val / 1000)}` },
+                            grid: { color: 'rgba(26, 38, 32, 0.06)' },
+                            border: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false }
+                    },
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                }
+            });
+
+            const canvas = loanChart.canvas;
+            canvas.addEventListener('mousemove', (event) => {
+                animationState.isPaused = true;
+                const points = loanChart.getElementsAtEventForMode(event, 'index', { intersect: false }, true);
+                if (points.length > 0) {
+                    const index = points[0].index;
+                    const safeIndex = Math.max(0, Math.min(index, animationState.totalFrames));
+                    const year = Math.floor(safeIndex / 12);
+                    const month = safeIndex % 12;
+                    hoverMonthEl.textContent = `Metai: ${year}, mėn.: ${month}`;
+                    hoverAnnuityEl.textContent = formatCurrency(animationState.animationData.annuity[safeIndex]);
+                    hoverLinearEl.textContent = formatCurrency(animationState.animationData.linear[safeIndex]);
+                    hoverInvestmentEl.textContent = formatCurrency(animationState.animationData.investment[safeIndex]);
+
+                    animationState.currentPoints = [];
+                    loanChart.data.datasets.forEach((dataset, i) => {
+                        const meta = loanChart.getDatasetMeta(i);
+                        if (meta.data[safeIndex]) {
+                            const { x, y } = meta.data[safeIndex].getProps(['x', 'y'], true);
+                            animationState.currentPoints.push({ x, y, borderColor: dataset.borderColor });
+                        }
+                    });
+
+                    loanChart.update('none');
+
+                    const animationDuration = 31500;
+                    animationState.elapsedTime = (index / animationState.totalFrames) * animationDuration;
+                }
+            });
+
+            canvas.addEventListener('mouseleave', () => {
+                animationState.isPaused = false;
+                animationState.lastFrameTime = null;
+            });
+
+            startChartAnimation(loanChart, chartDurationMonths, {
+                annuity: annuityData,
+                linear: linearData,
+                investment: investmentData
+            });
+        }
+
+        // === Klausytojai ===
+        calculateButton.addEventListener('click', calculateAndDisplayResults);
+
+        // Enter klavišas paleidžia skaičiavimą
+        document.querySelectorAll('input[type="number"]').forEach(input => {
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    calculateAndDisplayResults();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finansinių Tikslų Skaičiuoklė · Apie finansus</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        /* --- ŠRIFTŲ IMPORTAVIMAS (Brandbook: Plus Jakarta Sans) --- */
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
+
+        /* --- BRANDBOOK SPALVŲ PALETĖ --- */
+        :root {
+            /* Brand Colors */
+            --brand-green:       #45935B;  /* PRIMARY */
+            --brand-green-dark:  #2F6D41;  /* DARK · hover, contrast */
+            --brand-green-light: #6BB280;  /* LIGHT · accents */
+            --ink-dark:          #1A2620;  /* INK · headings, text */
+            --surface:           #F5F5F5;  /* SURFACE · card bg */
+            --gray-600:          #666666;  /* NEUTRAL · secondary text */
+            --gray-400:          #A8A8A8;  /* placeholder */
+            --gray-300:          #CCCCCC;  /* subtle borders */
+            --gray-200:          #E5E5E5;  /* borders */
+            --white:             #FFFFFF;
+
+            /* Backgrounds */
+            --bg-color: var(--white);
+            --card-bg: var(--white);
+            --card-bg-color: var(--white);
+            --card-border: var(--gray-200);
+            --card-highlight: var(--brand-green);
+
+            /* Text */
+            --text-main:      var(--ink-dark);
+            --text-primary:   var(--ink-dark);
+            --text-muted:     var(--gray-600);
+            --text-secondary: var(--gray-600);
+            --text-tertiary:  #888888;
+            --text-accent:    var(--brand-green);
+
+            /* Chart palette — brand-aligned (žali atspalviai + neutralūs šilti tonai) */
+            --color-blue:   #2F6D41;
+            --color-green:  #45935B;
+            --color-red:    #C25A4D;
+            --color-orange: #B07543;
+            --color-purple: #6B5B8A;
+            --color-yellow: #C9A227;
+            --color-teal:   #88C09A;
+
+            --accent-green-primary: var(--brand-green);          /* #45935B */
+            --accent-green-dark:    var(--ink-dark);             /* #1A2620 — pagrindinė linija */
+            --accent-green-light:   var(--brand-green-light);    /* #6BB280 */
+            --accent-red:           #C25A4D;
+            --accent-orange:        #B07543;
+            --accent-blue:          var(--brand-green-dark);     /* #2F6D41 */
+            --accent-yellow:        #C9A227;
+            --accent-cyan-visible:  #88C09A;                     /* šviesesnis mėtinis */
+
+            --border-light:  var(--gray-200);
+            --border-medium: var(--gray-200);
+
+            /* UI */
+            --nav-height: 60px;
+            --border-radius: 12px;
+            --radius-button: 8px;
+
+            /* Shadows tailored for light theme */
+            --shadow-sm:    rgba(26, 38, 32, 0.04);
+            --shadow-md:    rgba(26, 38, 32, 0.08);
+            --shadow-lg:    rgba(26, 38, 32, 0.10);
+            --shadow-inset: rgba(26, 38, 32, 0.04);
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: calc(var(--nav-height) + 2rem) 1rem 4rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* --- Header / Branding --- */
+        .site-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: var(--nav-height);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .brand-logo {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 800;
+            font-size: 0.95rem;
+            color: var(--ink-dark);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .brand-logo span {
+            color: var(--brand-green);
+        }
+
+        /* --- PAGRINDINĖ STRUKTŪRA --- */
+        .calculator-wrapper {
+            width: 100%;
+            max-width: 1200px;
+            display: grid;
+            gap: 1.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .calculator-wrapper h1 {
+            display: none; /* Replaced by the fixed header */
+        }
+
+        /* --- KORTELĖS (Brandbook Surface #F5F5F5, 8-12px radius) --- */
+        .card {
+            position: relative;
+            background: var(--surface);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            border: 1px solid var(--gray-200);
+            box-shadow: 0 1px 2px var(--shadow-sm);
+            box-sizing: border-box;
+            transition: box-shadow 0.2s ease;
+            overflow: hidden;
+        }
+
+        .inputs-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        /* --- FORMOS ELEMENTŲ STILIAI --- */
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.875rem;
+        }
+
+        .input-group h3 {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            color: var(--ink-dark);
+            margin: 0 0 0.5rem 0;
+            font-size: 1.125rem;
+            border-bottom: 2px solid var(--brand-green);
+            padding-bottom: 0.5rem;
+            display: inline-block;
+            align-self: flex-start;
+        }
+
+        .input-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .input-field label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--gray-600);
+        }
+
+        .input-field input {
+            width: 100%;
+            padding: 0.7rem 0.9rem;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-button);
+            background-color: var(--white);
+            color: var(--ink-dark);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        .input-field input::placeholder { color: var(--gray-400); }
+
+        .input-field input:hover {
+            border-color: var(--gray-300);
+        }
+
+        .input-field input:focus {
+            border-color: var(--brand-green);
+            box-shadow: 0 0 0 3px rgba(69, 147, 91, 0.15);
+        }
+
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        /* --- MYGTUKŲ STILIUS (Brandbook: 8px radius, brand green) --- */
+        .button-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        #calculate-button {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 700;
+            font-size: 0.95rem;
+            padding: 0.85rem 1.75rem;
+            border: none;
+            border-radius: var(--radius-button);
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+            background-color: var(--brand-green);
+            color: var(--white);
+            letter-spacing: 0.01em;
+        }
+
+        #calculate-button:hover {
+            background-color: var(--brand-green-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 14px -6px rgba(47, 109, 65, 0.5);
+        }
+
+        #calculate-button:active {
+            transform: translateY(0);
+        }
+
+        /* --- DIAGRAMOS IR LEGENDOS STILIAI --- */
+        .charts-grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        #summary-container,
+        #monthly-investments-card,
+        #etf-comparison-dashboard,
+        #explanation-card,
+        #disclaimer-container {
+            display: none;
+        }
+
+        .chart-container {
+            position: relative;
+        }
+
+        .chart-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1.5rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--gray-600);
+        }
+
+        .legend-color-box {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+        }
+
+        /* --- SANTRAUKOS, PAAIŠKINIMO STILIAI --- */
+        .summary-container h2, #explanation-card h2, #disclaimer-container h2 {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--ink-dark);
+            text-align: center;
+            margin-top: 0;
+            font-size: 1.5rem;
+        }
+
+        .summary-list {
+            list-style: none;
+            padding: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .summary-list li {
+            background: var(--white);
+            padding: 1rem 1.1rem;
+            border-radius: var(--radius-button);
+            border: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .summary-list li span:first-child {
+            color: var(--gray-600);
+            font-size: 0.875rem;
+        }
+        .summary-list li span:last-child {
+            font-weight: 700;
+            color: var(--ink-dark);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .summary-list li .unreached {
+            color: var(--accent-red);
+        }
+
+        .explanation-text, .disclaimer-text {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: var(--gray-600);
+        }
+
+        .explanation-text strong {
+             color: var(--ink-dark);
+             font-weight: 700;
+        }
+
+        #disclaimer-container {
+            text-align: center;
+            padding: 1.5rem 2rem;
+            background: var(--ink-dark);
+            border-color: var(--ink-dark);
+        }
+
+        #disclaimer-container h2 {
+            color: var(--white);
+        }
+
+        #disclaimer-container .disclaimer-text {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* --- DIAGRAMOS SPECIFINIAI STILIAI --- */
+        .intersection-line {
+            stroke: var(--accent-red);
+            stroke-width: 2px;
+        }
+
+        .chart-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem 1rem;
+            margin-bottom: 1.25rem;
+            font-size: 0.8rem;
+            color: var(--gray-600);
+            border-bottom: 1px solid var(--gray-200);
+            padding-bottom: 1rem;
+        }
+
+        .chart-summary span {
+            background: var(--white);
+            padding: 0.4rem 0.75rem;
+            border-radius: var(--radius-button);
+            border: 1px solid var(--gray-200);
+            color: var(--gray-600);
+        }
+
+        .chart-summary span strong {
+            color: var(--ink-dark);
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .chart-title {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--ink-dark);
+            margin: 0 0 0.25rem 0;
+            letter-spacing: -0.02em;
+        }
+
+        .chart-subtitle {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 400;
+            font-size: 0.875rem;
+            color: var(--gray-600);
+            margin: 0 0 1.25rem 0;
+            min-height: 1.2em;
+            line-height: 1.5;
+        }
+
+        .d3-chart svg { overflow: visible; }
+
+        .d3-chart .axis path,
+        .d3-chart .axis line {
+            stroke: var(--gray-200);
+        }
+
+        .d3-chart .axis text {
+            fill: var(--gray-600);
+            font-size: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .d3-chart .grid-line {
+            stroke: var(--gray-200);
+            stroke-dasharray: 2,3;
+            opacity: 0.7;
+        }
+
+        .tooltip {
+            position: absolute;
+            text-align: left;
+            padding: 0.875rem 1rem;
+            font-size: 0.85rem;
+            background: var(--white);
+            color: var(--ink-dark);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-button);
+            box-shadow: 0 10px 24px var(--shadow-md);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            z-index: 10;
+        }
+
+        .tooltip-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--gray-600);
+            margin: 0 0 0.6rem 0;
+            border-bottom: 1px solid var(--gray-200);
+            padding-bottom: 0.45rem;
+        }
+
+        .tooltip-line {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.25rem;
+            color: var(--ink-dark);
+        }
+
+        .tooltip-color-box {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .tooltip-line strong {
+            font-family: 'JetBrains Mono', monospace;
+            margin-left: auto;
+            padding-left: 1rem;
+            color: var(--ink-dark);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .site-header { height: 50px; }
+            .brand-logo { font-size: 0.8rem; letter-spacing: 0.5px; }
+            body { padding: calc(var(--nav-height) + 1rem) 0.75rem 2rem; }
+            .card { padding: 1.25rem; border-radius: 10px; }
+            .summary-container h2, #explanation-card h2, #disclaimer-container h2 { font-size: 1.25rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <header class="site-header">
+        <div class="brand-logo">APIE FINANSUS · <span>SKAIČIUOKLĖ</span></div>
+    </header>
+
+    <div class="calculator-wrapper">
+        <h1>Finansinių Tikslų Skaičiuoklė</h1>
+        
+        <div id="inputs-card" class="card">
+            <form id="financial-inputs-form">
+                <div class="inputs-container">
+                    <div class="input-group">
+                        <h3>Pasyvios Pajamos</h3>
+                        <div class="input-field">
+                            <label for="pasyviu-pajamu-pajamingumas">Pasyvių pajamų pajamingumas (%)</label>
+                            <input type="number" step="0.1" id="pasyviu-pajamu-pajamingumas" value="5">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <h3>Dabartinė Situacija</h3>
+                        <div class="input-field">
+                            <label for="butinosios-islaidos">Būtinosios Išlaidos (€/mėn.)</label>
+                            <input type="number" id="butinosios-islaidos" value="800">
+                        </div>
+                        <div class="input-field">
+                            <label for="visos-islaidos">Visos Išlaidos (€/mėn.)</label>
+                            <input type="number" id="visos-islaidos" value="1400">
+                        </div>
+                         <div class="input-field">
+                            <label for="metine-infliacija">Vidutinė Metinė Infliacija (%)</label>
+                            <input type="number" step="0.1" id="metine-infliacija" value="3">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <h3>Planavimas</h3>
+                        <div class="input-field">
+                            <label for="reikalingas-rezervas">Pageidaujamas Pinigų Rezervas (mėnesiai)</label>
+                            <input type="number" id="reikalingas-rezervas" min="0" value="0">
+                        </div>
+                        <div class="input-field">
+                            <label for="pensija-po-metu">Noriu išeiti į pensiją po (metų)</label>
+                            <input type="number" id="pensija-po-metu" value="20">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <h3>Investavimas</h3>
+                        <div class="input-field">
+                            <label for="invest-pirmine-suma">Pradinė Investuojama Suma (€)</label>
+                            <input type="number" id="invest-pirmine-suma" value="5000">
+                        </div>
+                        <div class="input-field">
+                            <label for="invest-menesine-suma">Mėnesinė Investuojama Suma (€/mėn.)</label>
+                            <input type="number" id="invest-menesine-suma" value="173">
+                        </div>
+                        <div class="input-field">
+                            <label for="metinis-pelningumas">Prognozuojamas Metinis Pelningumas (%)</label>
+                            <input type="number" step="0.1" id="metinis-pelningumas" value="10">
+                        </div>
+                         <div class="input-field">
+                            <label for="gpm-mokestis">GPM (%)</label>
+                            <input type="number" step="0.1" id="gpm-mokestis" value="0">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <h3>Asmeninis Finansinis Tikslas</h3>
+                         <div class="input-field">
+                            <label for="tikslas-po-metu">Noriu pasiekti tikslą po (metų):</label>
+                            <input type="number" id="tikslas-po-metu" value="0">
+                        </div>
+                        <div class="input-field">
+                            <label for="tikslas-suma">Suma, kurią noriu turėti (€):</label>
+                            <input type="number" id="tikslas-suma" value="0">
+                        </div>
+                    </div>
+                </div>
+                 <div class="button-container">
+                    <button type="submit" id="calculate-button">Apskaičiuoti Finansinius Tikslus</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="charts-grid">
+            <div id="chart1" class="card chart-container">
+                 <div class="chart-summary"></div>
+                <h2 class="chart-title">Ateities Išlaidos</h2>
+                <p class="chart-subtitle">Kaip išlaidos keisis per 40 metų dėl infliacijos.</p>
+                <div class="d3-chart"></div>
+                <div class="chart-legend"></div>
+            </div>
+            <div id="chart2" class="card chart-container">
+                <div class="chart-summary"></div>
+                <h2 class="chart-title">Finansinis Rezervas</h2>
+                <p class="chart-subtitle">Rekomenduojamas rezervas nenumatytiems atvejams.</p>
+                <div class="d3-chart"></div>
+                <div class="chart-legend"></div>
+            </div>
+            <div id="chart3" class="card chart-container">
+                <div class="chart-summary"></div>
+                <h2 class="chart-title">Kapitalas Pensijai</h2>
+                <p class="chart-subtitle">Kokio kapitalo jums reikės, kad gyventumėte iš pasyviųjų pajamų.</p>
+                <div class="d3-chart"></div>
+                <div class="chart-legend"></div>
+                <div class="summary-container" id="chart3-summary">
+                     <ul class="summary-list"></ul>
+                </div>
+            </div>
+            <div id="chart4" class="card chart-container">
+                <div class="chart-summary"></div>
+                <h2 class="chart-title">Finansinių Tikslų Projekcija</h2>
+                <p class="chart-subtitle">Jūsų investicijų augimas, palyginti su jūsų tikslais.</p>
+                <div class="d3-chart"></div>
+                <div class="chart-legend"></div>
+            </div>
+        </div>
+
+        <div id="summary-container" class="card summary-container">
+            <h2>Pasiekimų Santrauka</h2>
+            <ul class="summary-list"></ul>
+        </div>
+        
+        <div id="monthly-investments-card" class="card summary-container">
+            <h2>Reikalingos Mėnesinės Investicijos</h2>
+            <ul class="summary-list">
+                <li id="monthly-essential-savings">
+                    <span>Norint pasiekti kapitalą būtinoms išlaidoms dengti, reikia investuoti:</span>
+                    <span>€0/mėn.</span>
+                </li>
+                <li id="monthly-total-savings">
+                    <span>Norint pasiekti kapitalą visoms išlaidoms dengti, reikia investuoti:</span>
+                    <span>€0/mėn.</span>
+                </li>
+            </ul>
+        </div>
+        <div id="etf-comparison-dashboard" class="card">
+             <!-- ETF turinys čia -->
+        </div>
+        <div id="explanation-card" class="card">
+            <h2>Kaip atliekami skaičiavimai?</h2>
+            <p class="explanation-text">
+                <strong>Ateities išlaidos:</strong> Ateities išlaidos apskaičiuojamos kiekvieną mėnesį didinant dabartines išlaidas pagal nurodytą metinę infliacijos procentą. Tai parodo, kaip laikui bėgant didės pragyvenimo išlaidos.
+            </p>
+            <p class="explanation-text">
+                <strong>Finansinis rezervas:</strong> Rekomenduojamas rezervas yra jūsų mėnesinių išlaidų suma, padauginta iš nurodyto mėnesių skaičiaus. Ši suma taip pat didėja kartu su infliacija, siekiant užtikrinti, kad rezervas išliktų aktualus.
+            </p>
+             <p class="explanation-text">
+                <strong>Kapitalas Pensijai:</strong> Tai yra suma, reikalinga pasyvioms pajamoms, kurios padengtų jūsų išlaidas išėjus į pensiją. Ji apskaičiuojama naudojant pasirinktą pasyvių pajamų pajamingumo rodiklį. Grafiko apačioje esanti suvestinė rodo, kiek reikėtų taupyti (su 0% grąža) kiekvieną mėnesį, kad sukauptumėte šią sumą.
+            </p>
+            <p class="explanation-text">
+                <strong>Investicijų augimas:</strong> Grafikas rodo dvi kreives. <strong>Bendra vertė (punktyrinė)</strong> atspindi jūsų kapitalo augimą prieš mokesčius, parodant tikrąją sudėtinių palūkanų galią. <strong>Grynoji vertė (ištisinė)</strong> rodo, kokia būtų jūsų kapitalo vertė po GPM, jei nuspręstumėte jį realizuoti (parduoti) būtent tą dieną. Visi tikslų pasiekimai skaičiuojami pagal grynosios vertės kreivę.
+            </p>
+        </div>
+        
+        <div id="disclaimer-container" class="card">
+            <h2>Atsakomybės apribojimas</h2>
+            <p class="disclaimer-text">
+                Ši skaičiuoklė ir joje pateikta informacija yra skirta tik švietimo tikslams. Ji teikia apibendrintus duomenis ir neturėtų būti interpretuojama kaip asmeninis finansinis, investicinis, teisinis ar mokesčių patarimas, ar kaip rekomendacija imtis konkrečių veiksmų.
+            </p>
+            <p class="disclaimer-text">
+                Skaičiavimų rezultatai priklauso nuo jūsų įvestų duomenų tikslumo ir taikomų bendrųjų prielaidų, kurios gali neatspindėti jūsų individualios finansinės situacijos. Bet kokie sprendimai, priimti remiantis šia informacija, yra tik jūsų pačių rizika.
+            </p>
+            <p class="disclaimer-text">
+                Prieš priimdami bet kokius finansinius sprendimus, primygtinai rekomenduojame pasikonsultuoti su licencijuotu specialistu atitinkamoje srityje. Šios skaičiuoklės autoriai neprisiima jokios atsakomybės už tiesioginius ar netiesioginius nuostolius, patirtus naudojant šią priemonę.
+            </p>
+            <p class="disclaimer-text">Praeities rezultatai negarantuoja, kad tokie patys ar panašūs rezultatai bus ir ateityje. Investicijų vertė gali kilti ir kristi.</p>
+        </div>
+    </div>
+    
+    <div class="tooltip"></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    const form = document.getElementById('financial-inputs-form');
+    const chartsGrid = document.querySelector('.charts-grid');
+    const summaryContainer = document.getElementById('summary-container');
+    const monthlyInvestmentsCard = document.getElementById('monthly-investments-card');
+    const etfComparisonDashboard = document.getElementById('etf-comparison-dashboard');
+    const explanationCard = document.getElementById('explanation-card');
+    const disclaimerContainer = document.getElementById('disclaimer-container');
+
+    const fullDurationMonths = 40 * 12;
+    const margin = { top: 20, right: 30, bottom: 40, left: 70 };
+    const chartHeight = 450;
+    
+    const tooltip = d3.select(".tooltip");
+    
+    const formatCurrency = (value) => {
+        return new Intl.NumberFormat('lt-LT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
+    };
+
+    const formatMonthsToYears = (totalMonths) => {
+        if (totalMonths === null) return "Nepasiekta";
+        const years = Math.floor(totalMonths / 12);
+        const months = totalMonths % 12;
+        let result = "";
+        if (years > 0) {
+            result += `${years} metų`;
+        }
+        if (months > 0) {
+            if (years > 0) result += ", ";
+            result += `${months} mėn.`;
+        }
+        return result || "0 mėn.";
+    };
+
+    const findIntersectionMonth = (mainLine, targetLine, mainKey, targetKey) => {
+        for (let i = 1; i < mainLine.length; i++) {
+            if (mainLine[i-1][mainKey] < targetLine[i-1][targetKey] && mainLine[i][mainKey] >= targetLine[i][targetKey]) {
+                return mainLine[i].month;
+            }
+        }
+        return null;
+    };
+
+    function calculateMonthlySavingsRequired(targetNetValue, initialInvestment, monthlyReturnRate, totalMonths, taxRate) {
+        if (totalMonths <= 0) return (targetNetValue <= initialInvestment) ? 0 : null;
+
+        const compoundFactor = Math.pow(1 + monthlyReturnRate, totalMonths);
+        let fvFactor; 
+
+        if (monthlyReturnRate === 0) {
+            fvFactor = totalMonths;
+        } else {
+            fvFactor = (compoundFactor - 1) / monthlyReturnRate;
+        }
+
+        const numerator = targetNetValue - initialInvestment * (compoundFactor * (1 - taxRate) + taxRate);
+        const denominator = fvFactor * (1 - taxRate) + totalMonths * taxRate;
+
+        if (denominator === 0) return null;
+
+        const requiredMonthly = numerator / denominator;
+        return requiredMonthly > 0 ? requiredMonthly : 0;
+    }
+
+    function calculateAndDraw() {
+        const inputs = {
+            passiveIncomeYield: (parseFloat(document.getElementById('pasyviu-pajamu-pajamingumas').value) || 5) / 100,
+            essentialExpenses: parseFloat(document.getElementById('butinosios-islaidos').value) || 0,
+            totalExpenses: parseFloat(document.getElementById('visos-islaidos').value) || 0,
+            reserveMonths: parseInt(document.getElementById('reikalingas-rezervas').value) || 0, 
+            retirementYears: parseInt(document.getElementById('pensija-po-metu').value) || 0, 
+            inflation: (parseFloat(document.getElementById('metine-infliacija').value) || 0) / 100,
+            initialInvestment: parseFloat(document.getElementById('invest-pirmine-suma').value) || 0,
+            monthlyInvestment: parseFloat(document.getElementById('invest-menesine-suma').value) || 0,
+            annualReturn: (parseFloat(document.getElementById('metinis-pelningumas').value) || 0) / 100,
+            pitTax: (parseFloat(document.getElementById('gpm-mokestis').value) || 0) / 100, 
+            goalYears: parseInt(document.getElementById('tikslas-po-metu').value) || 0, 
+            goalAmount: parseFloat(document.getElementById('tikslas-suma').value) || 0, 
+        };
+        
+        const monthlyInflationRate = Math.pow(1 + inputs.inflation, 1/12) - 1;
+        const monthlyReturnRate = Math.pow(1 + inputs.annualReturn, 1/12) - 1;
+        const retirementMonths = inputs.retirementYears * 12;
+
+        const generateMonthlyData = (calculationFn) => Array.from({ length: fullDurationMonths + 1 }, (_, i) => calculationFn(i));
+        
+        const expensesData = generateMonthlyData(month => ({
+            month,
+            essential: inputs.essentialExpenses * Math.pow(1 + monthlyInflationRate, month),
+            total: inputs.totalExpenses * Math.pow(1 + monthlyInflationRate, month)
+        }));
+
+        const reserveData = generateMonthlyData(month => ({
+            month,
+            essentialReserve: expensesData[month].essential * inputs.reserveMonths,
+            totalReserve: expensesData[month].total * inputs.reserveMonths
+        }));
+
+        const pensionCapitalData = generateMonthlyData(month => {
+            const passiveIncomeReturn = inputs.passiveIncomeYield; 
+            const requiredNetMonthlyEssential = expensesData[month].essential;
+            const requiredNetMonthlyTotal = expensesData[month].total;
+            const requiredGrossYearlyEssential = (requiredNetMonthlyEssential * 12) / (1 - inputs.pitTax);
+            const requiredGrossYearlyTotal = (requiredNetMonthlyTotal * 12) / (1 - inputs.pitTax);
+            return {
+                month,
+                forEssentialCover: requiredGrossYearlyEssential / passiveIncomeReturn,
+                forTotalCover: requiredGrossYearlyTotal / passiveIncomeReturn
+            };
+        });
+        
+        const investmentGrowthData = [];
+        let totalContributions = inputs.initialInvestment;
+        let grossValue = inputs.initialInvestment;
+
+        for (let m = 0; m <= fullDurationMonths; m++) {
+            if (m > 0) {
+                grossValue = grossValue * (1 + monthlyReturnRate) + inputs.monthlyInvestment;
+                totalContributions += inputs.monthlyInvestment;
+            }
+            const profit = grossValue - totalContributions;
+            const tax = profit > 0 ? profit * inputs.pitTax : 0;
+            const netValue = grossValue - tax;
+            
+            investmentGrowthData.push({
+                month: m,
+                grossValue: grossValue,
+                netValue: netValue,
+                contributions: totalContributions
+            });
+        }
+        
+        const goalDataForIntersection = Array(fullDurationMonths + 1).fill({}).map((_, i) => ({ month: i, value: inputs.goalAmount }));
+        let goalIntersectionMonth = (inputs.goalAmount > 0) ? findIntersectionMonth(investmentGrowthData, goalDataForIntersection, 'netValue', 'value') : null;
+
+        const intersections = {
+            'Rezervas (Būtinosios Išlaidos)': findIntersectionMonth(investmentGrowthData, reserveData, 'netValue', 'essentialReserve'),
+            'Rezervas (Visos Išlaidos)': findIntersectionMonth(investmentGrowthData, reserveData, 'netValue', 'totalReserve'),
+            'Kapitalas Pensijai (Būtinosios Išlaidos)': findIntersectionMonth(investmentGrowthData, pensionCapitalData, 'netValue', 'forEssentialCover'), 
+            'Kapitalas Pensijai (Visos Išlaidos)': findIntersectionMonth(investmentGrowthData, pensionCapitalData, 'netValue', 'forTotalCover'), 
+            'Asmeninis Finansinis Tikslas': goalIntersectionMonth 
+        };
+        
+        const intersectionMonths = Object.values(intersections).filter(m => m !== null);
+        const maxIntersectionMonth = intersectionMonths.length > 0 ? Math.max(...intersectionMonths) : null;
+        let chart4XDomainEnd = (maxIntersectionMonth !== null && maxIntersectionMonth < (38 * 12)) ? maxIntersectionMonth + 24 : fullDurationMonths;
+        if (inputs.goalYears * 12 > chart4XDomainEnd) chart4XDomainEnd = inputs.goalYears * 12 + 24;
+        chart4XDomainEnd = Math.min(chart4XDomainEnd, fullDurationMonths);
+
+        const chart4Data = { investment: investmentGrowthData, reserve: reserveData, pension: pensionCapitalData, goal: { year: inputs.goalYears, amount: inputs.goalAmount }, intersections: [...new Set(intersectionMonths)] };
+
+        chartsGrid.style.display = 'grid';
+        [summaryContainer, monthlyInvestmentsCard, etfComparisonDashboard, explanationCard, disclaimerContainer].forEach(el => el.style.display = 'block');
+
+        renderChart1(expensesData, inputs);
+        renderChart3(pensionCapitalData, inputs);
+        renderChart4(chart4Data, inputs, [0, chart4XDomainEnd]);
+        renderSummary(intersections, '#summary-container', inputs); 
+
+        document.getElementById('chart2').style.display = inputs.reserveMonths === 0 ? 'none' : 'block';
+        if (inputs.reserveMonths > 0) renderChart2(reserveData, inputs);
+
+        const targetEssentialCapital = pensionCapitalData[retirementMonths]?.forEssentialCover || 0;
+        const targetTotalCapital = pensionCapitalData[retirementMonths]?.forTotalCover || 0;
+        
+        const monthlyInvestmentsEssential = calculateMonthlySavingsRequired(targetEssentialCapital, inputs.initialInvestment, monthlyReturnRate, retirementMonths, inputs.pitTax);
+        const monthlyInvestmentsTotal = calculateMonthlySavingsRequired(targetTotalCapital, inputs.initialInvestment, monthlyReturnRate, retirementMonths, inputs.pitTax);
+
+        document.querySelector('#monthly-essential-savings span:last-child').textContent = monthlyInvestmentsEssential !== null ? formatCurrency(monthlyInvestmentsEssential) + "/mėn." : "N/A";
+        document.querySelector('#monthly-total-savings span:last-child').textContent = monthlyInvestmentsTotal !== null ? formatCurrency(monthlyInvestmentsTotal) + "/mėn." : "N/A";
+    }
+    
+    function setupChart(containerId, allDataSeries, options = {}) {
+        const { fitY = false, xDomain = [0, fullDurationMonths], yDomain = null } = options;
+        const container = d3.select(`#${containerId} .d3-chart`);
+        container.selectAll("*").remove();
+        const width = container.node().getBoundingClientRect().width - margin.left - margin.right;
+        const svg = container.append("svg").attr("width", width + margin.left + margin.right).attr("height", chartHeight + margin.top + margin.bottom).append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+        const x = d3.scaleLinear().domain(xDomain).range([0, width]);
+        const y = d3.scaleLinear().range([chartHeight, 0]);
+        if (yDomain) {
+            y.domain(yDomain);
+        } else {
+            const visibleData = allDataSeries.flat().filter(d => d.month >= xDomain[0] && d.month <= xDomain[1]);
+            let yMax = d3.max(visibleData, d => d3.max(Object.values(d).filter(v => typeof v === 'number' && v !== d.month && !isNaN(v)))) || 1;
+            
+            if (containerId === 'chart4') {
+                const goalAmount = parseFloat(document.getElementById('tikslas-suma').value) || 0;
+                const goalYears = parseInt(document.getElementById('tikslas-po-metu').value) || 0;
+                if (goalYears * 12 <= xDomain[1] && goalAmount > yMax) {
+                    yMax = goalAmount;
+                }
+            }
+
+            y.domain([0, yMax * 1.1]).nice();
+        }
+        svg.append("g").attr("class", "axis x-axis").attr("transform", `translate(0,${chartHeight})`).call(d3.axisBottom(x).ticks(10).tickFormat(d => (d/12).toFixed(0) + " m.").tickSizeOuter(0));
+        svg.append("g").attr("class", "axis y-axis").call(d3.axisLeft(y).ticks(5).tickFormat(d => formatCurrency(d)).tickSizeOuter(0));
+        svg.append("g").attr("class", "grid").call(d3.axisLeft(y).tickSize(-width).tickFormat("")).selectAll("line").attr("class", "grid-line");
+        return { svg, x, y, width };
+    }
+
+    function updateChartSummary(chartId, items) {
+        const summaryContainer = d3.select(`#${chartId} .chart-summary`);
+        summaryContainer.html("");
+        items.forEach(item => summaryContainer.append('span').html(`${item.label}: <strong>${item.value}</strong>`));
+    }
+
+    function renderLegend(containerId, legendItems) {
+        const legendContainer = d3.select(`#${containerId} .chart-legend`);
+        legendContainer.html(""); 
+        legendItems.forEach(item => {
+            const legendItem = legendContainer.append("div").attr("class", "legend-item");
+            legendItem.append("div").attr("class", "legend-color-box").style("background-color", item.color).style("border", item.border || "none");
+            legendItem.append("span").text(item.text);
+        });
+    }
+
+    function renderSummary(intersections, containerId, inputs) {
+        const summaryList = d3.select(containerId).style('display', 'block').select(".summary-list");
+        summaryList.html("");
+        const displayOrder = ['Rezervas (Būtinosios Išlaidos)', 'Rezervas (Visos Išlaidos)', 'Kapitalas Pensijai (Būtinosios Išlaidos)', 'Kapitalas Pensijai (Visos Išlaidos)', 'Asmeninis Finansinis Tikslas'];
+        displayOrder.forEach(key => {
+            const li = summaryList.append("li");
+            li.append("span").text(key + ":");
+            const valueSpan = li.append("span");
+            let displayValue = ((key.startsWith('Rezervas') && inputs.reserveMonths === 0) || (key === 'Asmeninis Finansinis Tikslas' && inputs.goalAmount === 0)) ? " - " : formatMonthsToYears(intersections[key]);
+            valueSpan.text(displayValue);
+            if (intersections[key] === null && displayValue !== " - ") valueSpan.attr("class", "unreached");
+        });
+    }
+
+    function addTooltipInteraction(svg, x, y, width, dataSeries, labelsMap, xDomain) {
+        const focus = svg.append("g").attr("class", "focus").style("display", "none");
+        focus.append("line").attr("class", "focus-line").attr("y1", 0).attr("y2", chartHeight).attr("stroke", "var(--text-tertiary)").attr("stroke-width", 1).attr("stroke-dasharray", "3,3");
+        const bisectMonth = d3.bisector(d => d.month).left;
+        svg.append("rect").attr("class", "overlay").attr("width", width).attr("height", chartHeight).style("fill", "none").style("pointer-events", "all")
+            .on("mouseover", () => { focus.style("display", null); tooltip.style("opacity", 1); })
+            .on("mouseout", () => { focus.style("display", "none"); tooltip.style("opacity", 0); })
+            .on("mousemove", (event) => {
+                const x0 = x.invert(d3.pointer(event)[0]);
+                const i = bisectMonth(dataSeries[0], x0, 1);
+                if (i <= 0 || i >= dataSeries[0].length) return;
+                const d = (x0 - dataSeries[0][i - 1].month > dataSeries[0][i].month - x0) ? dataSeries[0][i] : dataSeries[0][i - 1];
+                if (!d || d.month > xDomain[1]) return;
+                focus.attr("transform", `translate(${x(d.month)},0)`);
+                let tooltipHtml = `<div class="tooltip-title">${formatMonthsToYears(d.month)}</div>`;
+                Object.keys(labelsMap).forEach(key => {
+                      if (d[key] !== undefined) {
+                        tooltipHtml += `<div class="tooltip-line"><div class="tooltip-color-box" style="background-color: ${labelsMap[key].color};"></div><span>${labelsMap[key].label}: <strong>${formatCurrency(d[key])}</strong></span></div>`;
+                    }
+                });
+                tooltip.html(tooltipHtml).style("left", (event.pageX + 15) + "px").style("top", (event.pageY - 28) + "px");
+            });
+    }
+
+    function renderChart1(data, inputs) {
+        updateChartSummary('chart1', [{ label: 'Būt. Išl.', value: formatCurrency(inputs.essentialExpenses) }, { label: 'Visos Išl.', value: formatCurrency(inputs.totalExpenses) }, { label: 'Infliacija', value: (inputs.inflation * 100).toFixed(1) + '%' }]);
+        const { svg, x, y, width } = setupChart("chart1", [data], { yDomain: [data[0].essential, data[data.length-1].total] });
+        svg.append("path").datum(data).attr("class", "pulse-A-line").attr("fill", "none").attr("stroke", "var(--accent-blue)").attr("stroke-width", 2.5).attr("d", d3.line().curve(d3.curveCatmullRom).x(d => x(d.month)).y(d => y(d.essential)));
+        svg.append("path").datum(data).attr("class", "pulse-B-line").attr("fill", "none").attr("stroke", "var(--accent-green-primary)").attr("stroke-width", 2.5).attr("d", d3.line().curve(d3.curveCatmullRom).x(d => x(d.month)).y(d => y(d.total)));
+        renderLegend("chart1", [{ color: "var(--accent-blue)", text: "Būtinosios Išlaidos"}, { color: "var(--accent-green-primary)", text: "Visos Išlaidos"}]);
+        addTooltipInteraction(svg, x, y, width, [data], { essential: { label: 'Būtinosios Išlaidos', color: 'var(--accent-blue)' }, total: { label: 'Visos Išlaidos', color: 'var(--accent-green-primary)' }}, x.domain());
+    }
+
+    function renderChart2(data, inputs) {
+        document.querySelector('#chart2 .chart-title').textContent = `Pinigų Rezervas (${inputs.reserveMonths} mėn.)`;
+        updateChartSummary('chart2', [{ label: 'Rezervas', value: `${inputs.reserveMonths} mėn.` }, { label: 'Infliacija', value: (inputs.inflation * 100).toFixed(1) + '%' }]);
+        const { svg, x, y, width } = setupChart("chart2", [data], { fitY: true });
+        svg.append("path").datum(data).attr("class", "pulse-B-area").attr("fill", "var(--accent-green-primary)").attr("fill-opacity", 0.1).attr("d", d3.area().curve(d3.curveCatmullRom).x(d => x(d.month)).y(d => y(d.totalReserve)));
+        svg.append("path").datum(data).attr("class", "pulse-A-area").attr("fill", "var(--accent-blue)").attr("fill-opacity", 0.1).attr("d", d3.area().curve(d3.curveCatmullRom).x(d => x(d.month)).y(d => y(d.essentialReserve)));
+        renderLegend("chart2", [{ color: "var(--accent-blue)", text: "Rezervas (Būtinosios Išlaidos)"}, { color: "var(--accent-green-primary)", text: "Rezervas (Visos Išlaidos)"}]);
+        addTooltipInteraction(svg, x, y, width, [data], { essentialReserve: { label: 'Rezervas (Būt.)', color: 'var(--accent-blue)' }, totalReserve: { label: 'Rezervas (Visos)', color: 'var(--accent-green-primary)' }}, x.domain());
+    }
+    
+    function renderChart3(data, inputs) {
+        updateChartSummary('chart3', [{ label: 'Pensija po', value: `${inputs.retirementYears} m.` }, { label: 'GPM', value: `${(inputs.pitTax * 100).toFixed(1)}%` }, { label: 'Infliacija', value: (inputs.inflation * 100).toFixed(1) + '%' }]);
+        const { svg, x, y, width } = setupChart("chart3", [data]);
+        svg.append("path").datum(data).attr("class", "pulse-B-area").attr("fill", "var(--accent-cyan-visible)").attr("fill-opacity", 0.3).attr("d", d3.area().curve(d3.curveMonotoneX).x(d => x(d.month)).y0(y(0)).y1(d => y(d.forTotalCover)));
+        svg.append("path").datum(data).attr("class", "pulse-A-area").attr("fill", "var(--accent-yellow)").attr("fill-opacity", 0.3).attr("d", d3.area().curve(d3.curveMonotoneX).x(d => x(d.month)).y0(y(0)).y1(d => y(d.forEssentialCover)));
+        if (inputs.retirementYears > 0) svg.append("line").attr("x1", x(inputs.retirementYears * 12)).attr("x2", x(inputs.retirementYears * 12)).attr("y1", y.range()[0]).attr("y2", y.range()[1]).attr("stroke", "var(--accent-red)").attr("stroke-width", 2).attr("stroke-dasharray", "4,4");
+        renderLegend("chart3", [{ color: "var(--accent-yellow)", text: "Kapitalas Būt. Išlaidoms"}, { color: "var(--accent-cyan-visible)", text: "Kapitalas Visoms Išlaidoms"}]);
+        
+        addTooltipInteraction(svg, x, y, width, [data], { forEssentialCover: { label: 'Kapitalas (Būt.)', color: 'var(--accent-yellow)' }, forTotalCover: { label: 'Kapitalas (Visos)', color: 'var(--accent-cyan-visible)' }}, x.domain());
+    }
+    
+    function renderChart4({ investment, reserve, pension, goal, intersections }, inputs, xDomain) {
+        updateChartSummary('chart4', [{ label: 'Prad. Inv.', value: formatCurrency(inputs.initialInvestment) }, { label: 'Mėn. Inv.', value: formatCurrency(inputs.monthlyInvestment) }, { label: 'Grąža', value: `${(inputs.annualReturn * 100).toFixed(1)}%` }, { label: 'GPM', value: `${(inputs.pitTax * 100).toFixed(1)}%` }]);
+        
+        const allDataForYDomain = [investment.map(d => ({...d, grossValue: d.grossValue, netValue: d.netValue, contributions: d.contributions})), reserve, pension];
+        const { svg, x, y, width } = setupChart("chart4", allDataForYDomain, { xDomain });
+        
+        svg.append("defs").append("clipPath").attr("id", "chart-area-clip").append("rect").attr("width", width).attr("height", chartHeight);
+        const clippedArea = svg.append('g').attr("clip-path", "url(#chart-area-clip)");
+
+        // --- TIKSLŲ PLOTAI ---
+        clippedArea.append("path").datum(reserve).attr("fill", "var(--accent-green-primary)").attr("fill-opacity", 0.1).attr("d", d3.area().curve(d3.curveCatmullRom).x(d => x(d.month)).y0(y(0)).y1(d => y(d.totalReserve)));
+        clippedArea.append("path").datum(reserve).attr("fill", "var(--accent-blue)").attr("fill-opacity", 0.1).attr("d", d3.area().curve(d3.curveCatmullRom).x(d => x(d.month)).y0(y(0)).y1(d => y(d.essentialReserve)));
+        clippedArea.append("path").datum(pension).attr("fill", "var(--accent-cyan-visible)").attr("fill-opacity", 0.1).attr("d", d3.area().curve(d3.curveCatmullRom).x(d => x(d.month)).y0(y(0)).y1(d => y(d.forTotalCover)));
+        clippedArea.append("path").datum(pension).attr("fill", "var(--accent-yellow)").attr("fill-opacity", 0.1).attr("d", d3.area().curve(d3.curveCatmullRom).x(d => x(d.month)).y0(y(0)).y1(d => y(d.forEssentialCover)));
+        
+        // --- ASMENINIS TIKSLAS ---
+        if (goal.year > 0 && goal.amount > 0) {
+            clippedArea.append("line").attr("x1", 0).attr("x2", width).attr("y1", y(goal.amount)).attr("y2", y(goal.amount)).attr("stroke", "var(--accent-orange)").attr("stroke-width", 2).attr("stroke-dasharray", "5,5");
+            clippedArea.append("line").attr("x1", x(goal.year * 12)).attr("x2", x(goal.year * 12)).attr("y1", 0).attr("y2", chartHeight).attr("stroke", "var(--accent-orange)").attr("stroke-width", 2).attr("stroke-dasharray", "5,5");
+            clippedArea.append("circle").attr("cx", x(goal.year * 12)).attr("cy", y(goal.amount)).attr("r", 6).attr("fill", "var(--accent-orange)").attr("stroke", "var(--card-bg-color)").attr("stroke-width", 2);
+        }
+        
+        // --- SUSIKIRTIMO LINIJOS (PAGAL GRYNĄJĄ VERTĘ) ---
+        intersections.forEach(month => {
+            const intersectionDataPoint = investment.find(d => d.month === month);
+            if (!intersectionDataPoint || y(intersectionDataPoint.netValue) < 0 || x(month) > width) return;
+            clippedArea.append("line").attr("class", "intersection-line").attr("x1", x(month)).attr("x2", x(month)).attr("y1", y(intersectionDataPoint.netValue)).attr("y2", chartHeight).attr("stroke-width", 2);
+        });
+
+        // --- INVESTICIJŲ KREIVĖS ---
+        clippedArea.append("path").datum(investment).attr("fill", "none").attr("stroke", "var(--text-tertiary)").attr("stroke-width", 2).attr("stroke-dasharray", "2,2").attr("d", d3.line().curve(d3.curveLinear).x(d => x(d.month)).y(d => y(d.contributions)));
+        clippedArea.append("path").datum(investment).attr("fill", "none").attr("stroke", "var(--accent-green-light)").attr("stroke-width", 2).attr("stroke-dasharray", "4,4").attr("d", d3.line().curve(d3.curveCatmullRom).x(d => x(d.month)).y(d => y(d.grossValue)));
+        clippedArea.append("path").datum(investment).attr("fill", "none").attr("stroke", "var(--accent-green-dark)").attr("stroke-width", 3).attr("d", d3.line().curve(d3.curveCatmullRom).x(d => x(d.month)).y(d => y(d.netValue)));
+        
+        renderLegend("chart4", [
+            { color: "var(--accent-green-dark)", text: "Grynoji Vertė (po mokesčių)"},
+            { color: "var(--accent-green-light)", text: "Bendra Vertė (prieš mokesčius)"},
+            { color: "var(--text-tertiary)", text: "Investuota Suma (įmokos)"},
+            { color: "var(--accent-green-primary)", text: "Rezervas (Visos Išlaidos)"},
+            { color: "var(--accent-blue)", text: "Rezervas (Būtinosios Išlaidos)"},
+            { color: "var(--accent-cyan-visible)", text: "Kapitalas Visoms Išlaidoms"},
+            { color: "var(--accent-yellow)", text: "Kapitalas Būt. Išlaidoms"}, 
+            { color: "var(--accent-orange)", text: "Asmeninis Finansinis Tikslas"}
+        ]);
+        
+        const combinedData = investment.map((d,i) => ({...d, ...reserve[i], ...pension[i]}));
+        addTooltipInteraction(svg, x, y, width, [combinedData], { 
+            netValue: { label: 'Grynoji Vertė', color: 'var(--accent-green-dark)' },
+            grossValue: { label: 'Bendra Vertė', color: 'var(--accent-green-light)' },
+            contributions: { label: 'Investuota Suma', color: 'var(--text-tertiary)' },
+            essentialReserve: { label: 'Rezervas (Būt.)', color: 'var(--accent-blue)' }, 
+            totalReserve: { label: 'Rezervas (Visos)', color: 'var(--accent-green-primary)' }, 
+            forEssentialCover: { label: 'Kapitalas (Būt.)', color: 'var(--accent-yellow)' }, 
+            forTotalCover: { label: 'Kapitalas (Visos)', color: 'var(--accent-cyan-visible)' }
+        }, x.domain());
+    }
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        calculateAndDraw();
+    });
+    
+    window.addEventListener('resize', () => {
+        if (chartsGrid.style.display === 'grid') {
+            calculateAndDraw();
+        }
+    });
+
+    [chartsGrid, summaryContainer, monthlyInvestmentsCard, etfComparisonDashboard, explanationCard, disclaimerContainer].forEach(el => el.style.display = 'none');
+});
+</script>
+</body>
+</html>

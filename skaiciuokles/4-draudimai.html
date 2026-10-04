@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Draudimų skaičiuoklė</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
+
+        :root {
+            /* Brandbook spalvos */
+            --brand-green: #45935B;
+            --brand-green-dark: #2F6D41;
+            --brand-green-light: #6BB280;
+            --ink-dark: #1A2620;
+            --gray-100: #F5F5F5;
+            --gray-400: #B3B3B3;
+            --gray-600: #666666;
+            --white: #FFFFFF;
+
+            /* Funkciniai */
+            --bg-color: var(--white);
+            --card-bg: var(--white);
+            --card-border: rgba(26, 38, 32, 0.08);
+            --text-main: var(--ink-dark);
+            --text-muted: var(--gray-600);
+            --text-accent: var(--brand-green);
+            --surface: var(--gray-100);
+
+            --border-radius: 12px;
+            --border-radius-sm: 8px;
+            --nav-height: 64px;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Figtree', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: calc(var(--nav-height) + 2rem) 1rem 4rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        .site-header {
+            position: fixed;
+            top: 0; left: 0; width: 100%;
+            height: var(--nav-height);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .brand-logo {
+            font-weight: 800;
+            font-size: 0.95rem;
+            color: var(--text-main);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .brand-logo span { color: var(--brand-green); }
+
+        .calculator-wrapper {
+            width: 100%;
+            max-width: 1200px;
+            display: grid;
+            gap: 2rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 2.5rem;
+            border: 1px solid var(--card-border);
+            box-shadow: 0 4px 20px -8px rgba(26, 38, 32, 0.08);
+        }
+
+        .card-title {
+            margin: 0 0 0.5rem;
+            color: var(--brand-green);
+            font-size: 1.25rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .card-subtitle {
+            margin: 0 0 2rem;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .inputs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .input-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--card-border);
+            border-radius: var(--border-radius-sm);
+            background: var(--white);
+            color: var(--text-main);
+            font-family: inherit;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        input::placeholder { color: var(--gray-400); }
+
+        input:focus, select:focus {
+            border-color: var(--brand-green);
+            box-shadow: 0 0 0 3px rgba(69, 147, 91, 0.15);
+        }
+
+        input:invalid {
+            border-color: #D9534F;
+        }
+
+        select {
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23666666' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            padding-right: 2.5rem;
+        }
+
+        .btn-calculate {
+            margin-top: 2rem;
+            width: 100%;
+            padding: 1rem;
+            background: var(--brand-green);
+            color: var(--white);
+            font-weight: 700;
+            font-size: 1rem;
+            font-family: inherit;
+            border: none;
+            border-radius: var(--border-radius-sm);
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-calculate:hover {
+            background: var(--brand-green-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 16px -8px rgba(69, 147, 91, 0.4);
+        }
+
+        .btn-calculate:active {
+            transform: translateY(0);
+        }
+
+        .results-container {
+            display: none;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .result-card {
+            background: var(--white);
+            border: 1px solid var(--card-border);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .result-card:hover {
+            border-color: var(--brand-green-light);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px -10px rgba(69, 147, 91, 0.25);
+        }
+
+        .result-title {
+            font-size: 0.8rem;
+            color: var(--brand-green);
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .result-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: auto;
+        }
+
+        .result-desc {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-top: 0.8rem;
+            line-height: 1.5;
+        }
+
+        .onco-tag {
+            background: #D9534F;
+            color: var(--white);
+            font-size: 0.65rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 800;
+            width: fit-content;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        /* --- INTERAKTYVI LENTELĖ --- */
+        .price-table-container {
+            display: none;
+            margin-top: 3rem;
+        }
+
+        .table-main-title {
+            color: var(--brand-green);
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .table-info-note {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .price-table-wrapper {
+            overflow-x: auto;
+            border-radius: var(--border-radius-sm);
+            border: 1px solid var(--card-border);
+        }
+
+        .price-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            color: var(--text-main);
+            text-align: center;
+            min-width: 900px;
+        }
+
+        .price-table th {
+            background: var(--surface);
+            color: var(--brand-green);
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            padding: 1rem;
+            border-bottom: 1px solid var(--card-border);
+            font-size: 0.75rem;
+        }
+
+        .price-table th span {
+            display: block;
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            margin-top: 4px;
+            text-transform: none;
+            letter-spacing: 0;
+            font-weight: 500;
+        }
+
+        .price-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--card-border);
+            transition: background-color 0.15s ease;
+        }
+
+        .price-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .price-cell {
+            cursor: pointer;
+            user-select: none;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .price-cell:hover {
+            background: rgba(69, 147, 91, 0.08);
+        }
+
+        .price-cell.deselected {
+            opacity: 0.35;
+            text-decoration: line-through;
+            color: var(--gray-600);
+        }
+
+        .age-col {
+            font-weight: 800;
+            color: var(--ink-dark);
+            background: var(--surface);
+            border-right: 1px solid var(--card-border);
+            font-size: 0.9rem;
+        }
+
+        .total-col {
+            font-weight: 800;
+            color: var(--brand-green);
+            background: rgba(69, 147, 91, 0.06);
+            border-left: 1px solid var(--card-border);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* --- PAAIŠKINIMŲ SEKCIJA --- */
+        .explanations-section {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: var(--surface);
+            border-radius: var(--border-radius-sm);
+            border: 1px solid var(--card-border);
+        }
+
+        .explanation-item {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 0.7rem;
+            display: flex;
+            gap: 10px;
+        }
+
+        .explanation-item:last-child { margin-bottom: 0; }
+
+        .explanation-item::before {
+            content: "•";
+            color: var(--brand-green);
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        strong { color: var(--text-main); font-weight: 700; }
+
+        @media (max-width: 640px) {
+            body { padding: calc(var(--nav-height) + 1rem) 0.75rem 2rem; }
+            .card { padding: 1.5rem; }
+            .inputs-grid { gap: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="site-header">
+    <div class="brand-logo">DRAUDIMŲ <span>SKAIČIUOKLĖ</span></div>
+</header>
+
+<div class="calculator-wrapper">
+    <!-- Įvesties kortelė -->
+    <div class="card">
+        <h3 class="card-title">Konsultanto įvestis</h3>
+        <p class="card-subtitle">Suveskite informaciją rekomendacijoms generuoti.</p>
+
+        <div class="inputs-grid">
+            <div class="input-field">
+                <label for="pajamosAsmens">Asmens pajamos „į rankas“ (€/mėn.)</label>
+                <input type="number" id="pajamosAsmens" value="2000" step="100" min="0" inputmode="numeric">
+            </div>
+            <div class="input-field">
+                <label for="islaidosButinos">Būtinosios šeimos išlaidos (€/mėn.)</label>
+                <input type="number" id="islaidosButinos" value="2000" step="100" min="0" inputmode="numeric">
+            </div>
+            <div class="input-field">
+                <label for="paskola">Būsto paskolos likutis (€)</label>
+                <input type="number" id="paskola" value="0" step="1000" min="0" inputmode="numeric">
+            </div>
+            <div class="input-field">
+                <label for="hasPartner">Ar asmuo turi antrą pusę?</label>
+                <select id="hasPartner">
+                    <option value="taip">Taip</option>
+                    <option value="ne">Ne</option>
+                </select>
+            </div>
+            <div class="input-field">
+                <label for="darboTipas">Užimtumas</label>
+                <select id="darboTipas">
+                    <option value="ds">Darbo sutartis / Valstybės tarnyba</option>
+                    <option value="kita">Individuali veikla / Verslas / Kita</option>
+                </select>
+            </div>
+            <div class="input-field">
+                <label for="giminesLetines">Tendencija giminėje (lėtinės, autoimuninės)</label>
+                <select id="giminesLetines">
+                    <option value="ne">Nėra tendencijos</option>
+                    <option value="taip">Yra tendencija</option>
+                </select>
+            </div>
+            <div class="input-field">
+                <label for="giminesVezys">Ar giminėje yra vėžinių susirgimų?</label>
+                <select id="giminesVezys">
+                    <option value="ne">Ne</option>
+                    <option value="taip">Taip</option>
+                </select>
+            </div>
+        </div>
+
+        <button type="button" class="btn-calculate" id="btnCalculate">Generuoti rekomendacijas</button>
+    </div>
+
+    <!-- Rezultatai -->
+    <div id="results" class="results-container">
+        <div class="result-card">
+            <div class="result-title">Gyvybės draudimas</div>
+            <div class="result-value" id="resGyvybe">0 €</div>
+            <div class="result-desc">
+                Paskaičiuota: (24 mėn. būtinosios išlaidos) + 5 000 € laidotuvėms.
+                <span id="extraMortgage"></span>
+            </div>
+        </div>
+        <div class="result-card">
+            <div class="result-title">Mirtis dėl NA</div>
+            <div class="result-value" id="resMirtisNA">0 €</div>
+            <div class="result-desc"></div>
+        </div>
+        <div class="result-card">
+            <div class="result-title">Traumos dėl NA</div>
+            <div class="result-value" id="resTraumos">0 €</div>
+            <div class="result-desc" id="traumaCalculationText"></div>
+        </div>
+        <div class="result-card">
+            <div class="result-title">Neįgalumas dėl NA</div>
+            <div class="result-value" id="resNeigalumas">0 €</div>
+            <div class="result-desc">Užtikrina 24 mėnesių būtinųjų išlaidų fondą prisitaikyti prie naujos aplinkos.</div>
+        </div>
+        <div class="result-card">
+            <div class="result-title">Kritinės ligos</div>
+            <div class="result-value" id="resKritines">0 €</div>
+            <div class="result-desc"></div>
+        </div>
+        <div class="result-card" style="border-left: 4px solid #D9534F;">
+            <div class="onco-tag">ONCODROP</div>
+            <div class="result-title">Draudimas nuo vėžio</div>
+            <div class="result-value" id="resOnco">0 €</div>
+            <div class="result-desc" id="oncoDescText"></div>
+        </div>
+    </div>
+
+    <!-- Interaktyvi kainų lentelė -->
+    <div id="price-table-container" class="card price-table-container">
+        <div class="table-main-title">Pavyzdinės draudimų kainos</div>
+        <p class="table-info-note">Spustelėkite ant kainos langelio, kad atžymėtumėte draudimą. VISO suma pasikeis automatiškai.</p>
+
+        <div class="price-table-wrapper">
+            <table class="price-table">
+                <thead>
+                    <tr>
+                        <th>Amžius</th>
+                        <th>Gyvybė<span>(50 000 €)</span></th>
+                        <th>Mirtis NA<span>(50 000 €)</span></th>
+                        <th>Traumos<span>(35 000 €)</span></th>
+                        <th>Neįgalumas<span>(45 000 €)</span></th>
+                        <th>Kritinės ligos<span>(10 000 €)</span></th>
+                        <th>OncoDrop<span>(20 000 €)</span></th>
+                        <th>Viso</th>
+                    </tr>
+                </thead>
+                <tbody id="priceTableBody">
+                    <tr data-row="25">
+                        <td class="age-col">25 m.</td>
+                        <td class="price-cell" data-val="5.44">5,44 €</td>
+                        <td class="price-cell" data-val="4.51">4,51 €</td>
+                        <td class="price-cell" data-val="15.61">15,61 €</td>
+                        <td class="price-cell" data-val="3.78">3,78 €</td>
+                        <td class="price-cell" data-val="2.38">2,38 €</td>
+                        <td class="price-cell" data-val="7.00">7,00 €</td>
+                        <td class="total-col">38,72 €</td>
+                    </tr>
+                    <tr data-row="30">
+                        <td class="age-col">30 m.</td>
+                        <td class="price-cell" data-val="6.03">6,03 €</td>
+                        <td class="price-cell" data-val="4.51">4,51 €</td>
+                        <td class="price-cell" data-val="15.61">15,61 €</td>
+                        <td class="price-cell" data-val="3.78">3,78 €</td>
+                        <td class="price-cell" data-val="2.93">2,93 €</td>
+                        <td class="price-cell" data-val="8.00">8,00 €</td>
+                        <td class="total-col">40,86 €</td>
+                    </tr>
+                    <tr data-row="35">
+                        <td class="age-col">35 m.</td>
+                        <td class="price-cell" data-val="8.84">8,84 €</td>
+                        <td class="price-cell" data-val="4.51">4,51 €</td>
+                        <td class="price-cell" data-val="15.61">15,61 €</td>
+                        <td class="price-cell" data-val="3.78">3,78 €</td>
+                        <td class="price-cell" data-val="3.88">3,88 €</td>
+                        <td class="price-cell" data-val="10.00">10,00 €</td>
+                        <td class="total-col">46,62 €</td>
+                    </tr>
+                    <tr data-row="45">
+                        <td class="age-col">45 m.</td>
+                        <td class="price-cell" data-val="14.82">14,82 €</td>
+                        <td class="price-cell" data-val="4.51">4,51 €</td>
+                        <td class="price-cell" data-val="15.61">15,61 €</td>
+                        <td class="price-cell" data-val="3.78">3,78 €</td>
+                        <td class="price-cell" data-val="7.69">7,69 €</td>
+                        <td class="price-cell" data-val="17.00">17,00 €</td>
+                        <td class="total-col">63,41 €</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paaiškinimai -->
+        <div class="explanations-section">
+            <div class="explanation-item">Tai yra pavyzdiniai skaičiavimai. Individualūs pasiūlymai pateikiami tik rizikos vertintojams išanalizavus asmens sveikatos būklę.</div>
+            <div class="explanation-item">Draudimo kainos kinta <strong>PROPORCINGAI</strong> didinant arba mažinant pasirinktas sumas.</div>
+            <div class="explanation-item">Skaičiavimai įvertina 2026 m. SODRA pokyčius: VDU ~2 312,15 €, lubos 2 VDU, mokesčiai 21%.</div>
+            <div class="explanation-item">Apskaičiuoti <strong>MINIMALIAUSIO</strong> dydžio rekomenduojami draudimai.</div>
+            <div class="explanation-item">Skaičiavimams naudojami 2026 m. prognozuojami rodikliai: VDU 2 312,15 €, lubos 4 624,30 €. Traumų suma parenkama, kad 5% išmoka (pvz. žastikaulis) padengtų nuostolį ir <strong>800 €</strong> priedą.</div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    'use strict';
+
+    // --- KONSTANTOS ---
+    const VDU_2026 = 2312.15;
+    const SODRA_CAP_MULTIPLIER = 2;
+    const NET_TO_GROSS_RATIO = 0.605; // apytikslis koeficientas DS atveju
+    const SICKNESS_BENEFIT_RATE = 0.6206;
+    const GPM_RATE = 0.21;
+    const TRAUMA_PAYOUT_RATE = 0.05;
+    const TRAUMA_BONUS = 800;
+    const FUNERAL_FUND = 5000;
+    const ESSENTIAL_MONTHS = 24;
+
+    // Lietuvių kalbos formatavimas
+    const eurFormatter = new Intl.NumberFormat('lt-LT', {
+        style: 'currency',
+        currency: 'EUR',
+        maximumFractionDigits: 0
+    });
+    const decimalFormatter = new Intl.NumberFormat('lt-LT', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+
+    const formatEur = (value) => eurFormatter.format(Math.round(value));
+    const formatDecimalEur = (value) => decimalFormatter.format(value) + ' €';
+
+    // --- DOM elementų cache (vienkartinis) ---
+    const $ = (id) => document.getElementById(id);
+
+    const els = {
+        pajamosAsmens: $('pajamosAsmens'),
+        islaidosButinos: $('islaidosButinos'),
+        paskola: $('paskola'),
+        hasPartner: $('hasPartner'),
+        darboTipas: $('darboTipas'),
+        giminesLetines: $('giminesLetines'),
+        giminesVezys: $('giminesVezys'),
+        btnCalculate: $('btnCalculate'),
+        results: $('results'),
+        priceTableContainer: $('price-table-container'),
+        priceTableBody: $('priceTableBody'),
+        resGyvybe: $('resGyvybe'),
+        resMirtisNA: $('resMirtisNA'),
+        resTraumos: $('resTraumos'),
+        resNeigalumas: $('resNeigalumas'),
+        resKritines: $('resKritines'),
+        resOnco: $('resOnco'),
+        traumaCalculationText: $('traumaCalculationText'),
+        oncoDescText: $('oncoDescText'),
+        extraMortgage: $('extraMortgage')
+    };
+
+    // --- Įvesties skaitymas ir validacija ---
+    function readInputs() {
+        const num = (el) => {
+            const v = parseFloat(el.value);
+            return Number.isFinite(v) && v >= 0 ? v : 0;
+        };
+        return {
+            netIncome: num(els.pajamosAsmens),
+            essentialExp: num(els.islaidosButinos),
+            mortgage: num(els.paskola),
+            hasPartner: els.hasPartner.value === 'taip',
+            jobType: els.darboTipas.value,
+            familyHistory: els.giminesLetines.value === 'taip',
+            cancerHistory: els.giminesVezys.value === 'taip'
+        };
+    }
+
+    // --- Skaičiavimo logika (gryna funkcija — lengva testuoti) ---
+    function computeRecommendations(input) {
+        const sodraCapBruto = VDU_2026 * SODRA_CAP_MULTIPLIER;
+        const brutoIncome = input.netIncome / NET_TO_GROSS_RATIO;
+        const compEarnings = Math.min(brutoIncome, sodraCapBruto);
+        const benefitGross = compEarnings * SICKNESS_BENEFIT_RATE;
+        const benefitNeto = benefitGross * (1 - GPM_RATE);
+        const monthlyLoss = Math.max(0, input.netIncome - benefitNeto);
+
+        // Gyvybės draudimas
+        let lifeSum = (input.essentialExp * ESSENTIAL_MONTHS) + FUNERAL_FUND;
+        let mortgageAdded = 0;
+        if (input.mortgage > 0 && input.hasPartner) {
+            mortgageAdded = input.mortgage * 0.5;
+            lifeSum += mortgageAdded;
+        }
+
+        // Traumų suma
+        const payoutTarget = (input.jobType === 'ds')
+            ? (monthlyLoss + TRAUMA_BONUS)
+            : (input.essentialExp + TRAUMA_BONUS);
+        const traumaSum = payoutTarget / TRAUMA_PAYOUT_RATE;
+
+        // Kritinės ligos
+        const ciSum = input.familyHistory ? 12000 : 8000;
+
+        // Neįgalumas
+        const disabilitySum = input.essentialExp * ESSENTIAL_MONTHS;
+
+        // OncoDrop
+        const oncoSum = input.cancerHistory ? 50000 : 20000;
+        const oncoPriceFrom = input.cancerHistory ? 11 : 7;
+
+        return {
+            lifeSum,
+            mortgageAdded,
+            mortgageApplied: mortgageAdded > 0,
+            mirtisNaSum: lifeSum,
+            traumaSum,
+            payoutTarget,
+            monthlyLoss,
+            disabilitySum,
+            ciSum,
+            oncoSum,
+            oncoPriceFrom
+        };
+    }
+
+    // --- DOM atnaujinimas ---
+    function renderResults(r) {
+        els.resGyvybe.textContent = formatEur(r.lifeSum);
+        els.resMirtisNA.textContent = formatEur(r.mirtisNaSum);
+        els.resTraumos.textContent = formatEur(r.traumaSum);
+        els.resNeigalumas.textContent = formatEur(r.disabilitySum);
+        els.resKritines.textContent = formatEur(r.ciSum);
+        els.resOnco.textContent = formatEur(r.oncoSum);
+
+        els.traumaCalculationText.innerHTML =
+            `Deficitas: ~${formatEur(r.monthlyLoss)} + ${TRAUMA_BONUS} € priedas. ` +
+            `<strong>Suma parinkta, kad 5% išmoka būtų ${formatEur(r.payoutTarget)}.</strong>`;
+
+        els.oncoDescText.innerHTML =
+            `Rekomenduojama specializuota apsauga prie kritinių ligų. ` +
+            `Mėnesinė kaina nuo <strong>${r.oncoPriceFrom} €/mėn.</strong>`;
+
+        els.extraMortgage.textContent = r.mortgageApplied
+            ? ` Pridėta 50% paskolos likučio (${formatEur(r.mortgageAdded)}) — apsauga partneriui.`
+            : '';
+
+        els.results.style.display = 'grid';
+        els.priceTableContainer.style.display = 'block';
+        els.results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function calculateInsurance() {
+        const input = readInputs();
+        const result = computeRecommendations(input);
+        renderResults(result);
+    }
+
+    // --- Lentelės eilutės sumos perskaičiavimas ---
+    function updateRowTotal(row) {
+        let total = 0;
+        const cells = row.querySelectorAll('.price-cell:not(.deselected)');
+        cells.forEach(c => {
+            total += parseFloat(c.dataset.val) || 0;
+        });
+        const totalCell = row.querySelector('.total-col');
+        if (totalCell) totalCell.textContent = formatDecimalEur(total);
+    }
+
+    // --- Event delegation lentelei (vietoj inline onclick) ---
+    els.priceTableBody.addEventListener('click', (e) => {
+        const cell = e.target.closest('.price-cell');
+        if (!cell) return;
+        cell.classList.toggle('deselected');
+        updateRowTotal(cell.parentElement);
+    });
+
+    // Mygtuko klausytojas
+    els.btnCalculate.addEventListener('click', calculateInsurance);
+
+    // Enter klavišas formoje
+    document.querySelectorAll('.inputs-grid input, .inputs-grid select').forEach(el => {
+        el.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                calculateInsurance();
+            }
+        });
+    });
+})();
+</script>
+
+</body>
+</html>
